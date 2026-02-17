@@ -41,3 +41,33 @@ export interface GitLabIssue {
   epic_iid: number | null;
   milestone: { title: string } | null;
 }
+
+// Tree structure for rendering the hierarchical table
+// Note: expand/collapse state is NOT stored here — the tree is $derived
+// (read-only). UI state like expanded nodes is tracked separately.
+
+export interface TreeEpic {
+  epic: GitLabEpic | null; // null = "No Epic" bucket
+  issues: GitLabIssue[];
+}
+
+export interface TreeProject {
+  project: GitLabProject;
+  epics: TreeEpic[];
+}
+
+export interface TreeGroup {
+  group: GitLabGroup;
+  subgroups: TreeGroup[];
+  projects: TreeProject[];
+}
+
+// Cached data stored in localStorage
+
+export interface CachedData {
+  groups: GitLabGroup[];
+  projects: GitLabProject[];
+  epics: GitLabEpic[];
+  issues: GitLabIssue[];
+  timestamp: number;
+}

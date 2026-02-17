@@ -2,6 +2,7 @@
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
+  import { dataStore } from "$lib/stores/data.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
@@ -9,16 +10,17 @@
 
   // Check for OAuth callback before deciding initial view
   const hasOAuthCode = new URLSearchParams(window.location.search).has("code");
+
+  // Try loading cached data on startup
+  const hasFreshCache = connectionStore.isConnected && !hasOAuthCode && dataStore.loadFromCache();
+
   let view = $state<AppView>(
-    connectionStore.isConnected ? "loading" : hasOAuthCode ? "loading" : "connection"
+    hasFreshCache ? "main" :
+    connectionStore.isConnected ? "loading" :
+    hasOAuthCode ? "loading" :
+    "connection"
   );
   let oauthError = $state("");
-
-  // Loaded data (will be used in Phase 3+)
-  let groups = $state<GitLabGroup[]>([]);
-  let projects = $state<GitLabProject[]>([]);
-  let epics = $state<GitLabEpic[]>([]);
-  let issues = $state<GitLabIssue[]>([]);
 
   // Handle OAuth callback on app load
   async function handleOAuthCallback() {
@@ -74,10 +76,7 @@
     epics: GitLabEpic[];
     issues: GitLabIssue[];
   }) {
-    groups = data.groups;
-    projects = data.projects;
-    epics = data.epics;
-    issues = data.issues;
+    dataStore.setData(data);
     view = "main";
   }
 
@@ -85,12 +84,13 @@
     view = "connection";
   }
 
+  function handleRefresh() {
+    view = "loading";
+  }
+
   function handleDisconnect() {
     connectionStore.disconnect();
-    groups = [];
-    projects = [];
-    epics = [];
-    issues = [];
+    dataStore.clear();
     view = "connection";
   }
 </script>
@@ -114,7 +114,7 @@
         <div class="flex gap-2">
           <button
             class="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
-            onclick={() => { view = "loading"; }}
+            onclick={handleRefresh}
           >
             Refresh
           </button>
@@ -127,7 +127,12 @@
         </div>
       </div>
       <p class="text-muted-foreground">
-        Loaded {groups.length} groups, {projects.length} projects, {epics.length} epics, {issues.length} issues.
+        Loaded {dataStore.groups.length} groups, {dataStore.projects.length} projects, {dataStore.epics.length} epics, {dataStore.issues.length} issues.
+        {#if dataStore.cacheTimestamp}
+          <span class="text-xs">
+            (cached {new Date(dataStore.cacheTimestamp).toLocaleTimeString()})
+          </span>
+        {/if}
       </p>
       <p class="mt-2 text-sm text-muted-foreground">Hierarchical table coming in Phase 4.</p>
     </div>
