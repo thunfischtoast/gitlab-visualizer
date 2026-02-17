@@ -38,18 +38,17 @@ src/
 │   │   ├── storage.ts          # LocalStorage read/write helpers
 │   │   └── helpers.ts          # Label colors, URL building, etc.
 │   └── components/
-│       └── ui/                 # shadcn-svelte components (auto-generated)
-├── components/
-│   ├── ConnectionSetup.svelte  # URL + token input form
-│   ├── DataLoader.svelte       # Fetch progress indicator
-│   ├── MainLayout.svelte       # Top bar + tab container + content
-│   ├── FilterBar.svelte        # Search, label, status, assignee filters
-│   ├── HierarchicalTable.svelte  # The main collapsible tree table
-│   ├── GroupRow.svelte         # Expandable group row
-│   ├── ProjectRow.svelte       # Expandable project row
-│   ├── EpicRow.svelte          # Expandable epic row
-│   ├── IssueRow.svelte         # Leaf issue row
-│   └── LabelBadge.svelte      # Colored label chip
+│       ├── ui/                 # shadcn-svelte components (auto-generated)
+│       ├── ConnectionSetup.svelte  # URL + token input form
+│       ├── DataLoader.svelte       # Fetch progress indicator
+│       ├── MainLayout.svelte       # Top bar + tab container + content
+│       ├── FilterBar.svelte        # Search, label, status, assignee filters
+│       ├── HierarchicalTable.svelte  # The main collapsible tree table
+│       ├── GroupRow.svelte         # Expandable group row
+│       ├── ProjectRow.svelte       # Expandable project row
+│       ├── EpicRow.svelte          # Expandable epic row
+│       ├── IssueRow.svelte         # Leaf issue row
+│       └── LabelBadge.svelte      # Colored label chip
 ```
 
 ---

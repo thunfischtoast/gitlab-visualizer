@@ -25,8 +25,9 @@ src/
     stores/               # Svelte 5 rune-based stores (.svelte.ts files)
     types/                # TypeScript interfaces for GitLab entities
     utils/                # Helpers (localStorage, label colors, etc.)
-    components/ui/        # shadcn-svelte components (don't edit unless customizing)
-  components/             # App-specific components (ConnectionSetup, FilterBar, table rows, etc.)
+    components/
+      ui/                 # shadcn-svelte components (don't edit unless customizing)
+      *.svelte            # App-specific components (ConnectionSetup, FilterBar, table rows, etc.)
 ```
 
 ## Key Conventions
