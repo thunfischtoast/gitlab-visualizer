@@ -8,7 +8,7 @@
   <Input
     type="text"
     placeholder="Search issues..."
-    class="w-64"
+    class="w-full sm:w-64"
     value={filterStore.searchText}
     oninput={(e: Event) => {
       filterStore.searchText = (e.currentTarget as HTMLInputElement).value;
@@ -25,7 +25,7 @@
   />
 
   <select
-    class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus:border-ring"
+    class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus:border-ring focus-visible:ring-2 focus-visible:ring-ring"
     value={filterStore.statusFilter}
     onchange={(e) => {
       filterStore.statusFilter = (e.currentTarget as HTMLSelectElement)
@@ -51,7 +51,7 @@
 
   {#if filterStore.hasActiveFilters}
     <button
-      class="rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-accent"
+      class="rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onclick={() => filterStore.clearFilters()}
     >
       Clear filters

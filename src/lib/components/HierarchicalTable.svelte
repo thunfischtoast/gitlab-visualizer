@@ -36,13 +36,13 @@
   <!-- Toolbar -->
   <div class="mb-2 flex gap-2">
     <button
-      class="rounded-md border px-2.5 py-1 text-xs hover:bg-accent"
+      class="rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onclick={expandAll}
     >
       Expand All
     </button>
     <button
-      class="rounded-md border px-2.5 py-1 text-xs hover:bg-accent"
+      class="rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onclick={collapseAll}
     >
       Collapse All
@@ -54,21 +54,21 @@
     class="flex items-center border-b-2 border-border py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
   >
     <button
-      class="min-w-0 flex-1 text-left hover:text-foreground"
+      class="min-w-0 flex-1 text-left transition-colors hover:text-foreground"
       onclick={() => filterStore.toggleSort("title")}
     >
       Name{sortIndicator("title")}
     </button>
-    <div class="w-48 flex-shrink-0 px-2">Labels</div>
+    <div class="hidden w-48 flex-shrink-0 px-2 lg:block">Labels</div>
     <button
-      class="w-20 flex-shrink-0 text-center hover:text-foreground"
+      class="w-20 flex-shrink-0 text-center transition-colors hover:text-foreground"
       onclick={() => filterStore.toggleSort("status")}
     >
       Status{sortIndicator("status")}
     </button>
-    <div class="w-32 flex-shrink-0 px-2">Assignee</div>
+    <div class="hidden w-32 flex-shrink-0 px-2 md:block">Assignee</div>
     <button
-      class="w-16 flex-shrink-0 text-center hover:text-foreground"
+      class="w-16 flex-shrink-0 text-center transition-colors hover:text-foreground"
       onclick={() => filterStore.toggleSort("iid")}
     >
       Count{sortIndicator("iid")}
@@ -81,11 +81,17 @@
   {/each}
 
   {#if filterStore.filteredTree.length === 0}
-    <div class="py-8 text-center text-sm text-muted-foreground">
+    <div class="py-12 text-center">
       {#if filterStore.hasActiveFilters}
-        No issues match your filters.
+        <p class="text-sm text-muted-foreground">No issues match your filters.</p>
+        <button
+          class="mt-2 text-sm text-primary underline-offset-4 transition-colors hover:underline"
+          onclick={() => filterStore.clearFilters()}
+        >
+          Clear all filters
+        </button>
       {:else}
-        No data to display.
+        <p class="text-sm text-muted-foreground">No data to display.</p>
       {/if}
     </div>
   {/if}

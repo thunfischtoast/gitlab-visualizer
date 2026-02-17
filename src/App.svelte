@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fade } from "svelte/transition";
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
   import FilterBar from "$lib/components/FilterBar.svelte";
@@ -100,48 +101,89 @@
 </script>
 
 <main class="min-h-screen bg-background text-foreground">
-  {#if view === "connection"}
-    <ConnectionSetup onconnected={handleConnected} />
-    {#if oauthError}
-      <div class="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-destructive px-4 py-2 text-sm text-destructive-foreground">
-        {oauthError}
+  <svelte:boundary onerror={(e) => console.error("App error:", e)}>
+    {#if view === "connection"}
+      <ConnectionSetup onconnected={handleConnected} />
+      {#if oauthError}
+        <div
+          class="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-md bg-destructive px-4 py-2 text-sm text-destructive-foreground shadow-lg"
+          transition:fade={{ duration: 200 }}
+        >
+          <span>{oauthError}</span>
+          <button
+            class="ml-1 font-medium underline underline-offset-2"
+            onclick={() => { oauthError = ""; }}
+          >Dismiss</button>
+        </div>
+      {/if}
+
+    {:else if view === "loading"}
+      <DataLoader onloaded={handleLoaded} oncancel={handleLoadCancel} />
+
+    {:else if view === "main"}
+      <!-- Sticky header -->
+      <div class="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+        <div class="mx-auto max-w-screen-2xl px-4 py-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-lg font-bold">RACOON GitLab Visualizer</h1>
+              <p class="text-xs text-muted-foreground">
+                {dataStore.groups.length} groups, {dataStore.projects.length} projects, {dataStore.epics.length} epics, {dataStore.issues.length} issues
+                {#if dataStore.cacheTimestamp}
+                  &middot; cached {new Date(dataStore.cacheTimestamp).toLocaleTimeString()}
+                {/if}
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+                onclick={handleRefresh}
+              >
+                Refresh
+              </button>
+              <button
+                class="rounded-md border px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                onclick={handleDisconnect}
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="mx-auto max-w-screen-2xl px-4 py-3">
+        <div class="mb-3">
+          <FilterBar />
+        </div>
+        <HierarchicalTable />
       </div>
     {/if}
 
-  {:else if view === "loading"}
-    <DataLoader onloaded={handleLoaded} oncancel={handleLoadCancel} />
-
-  {:else if view === "main"}
-    <div class="p-4">
-      <div class="mb-4 flex items-center justify-between">
-        <h1 class="text-xl font-bold">RACOON GitLab Visualizer</h1>
-        <div class="flex gap-2">
-          <button
-            class="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
-            onclick={handleRefresh}
-          >
-            Refresh
-          </button>
-          <button
-            class="rounded-md border px-3 py-1.5 text-sm text-destructive hover:bg-destructive/10"
-            onclick={handleDisconnect}
-          >
-            Disconnect
-          </button>
+    {#snippet failed(error, reset)}
+      <div class="flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+          <h2 class="mb-2 text-lg font-semibold text-destructive">Something went wrong</h2>
+          <p class="mb-4 text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "An unexpected error occurred."}
+          </p>
+          <div class="flex justify-center gap-2">
+            <button
+              class="rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent"
+              onclick={reset}
+            >
+              Try again
+            </button>
+            <button
+              class="rounded-md border px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              onclick={handleDisconnect}
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
       </div>
-      <p class="mb-3 text-muted-foreground">
-        Loaded {dataStore.groups.length} groups, {dataStore.projects.length} projects, {dataStore.epics.length} epics, {dataStore.issues.length} issues.
-        {#if dataStore.cacheTimestamp}
-          <span class="text-xs">
-            (cached {new Date(dataStore.cacheTimestamp).toLocaleTimeString()})
-          </span>
-        {/if}
-      </p>
-      <div class="mb-3">
-        <FilterBar />
-      </div>
-      <HierarchicalTable />
-    </div>
-  {/if}
+    {/snippet}
+  </svelte:boundary>
 </main>
