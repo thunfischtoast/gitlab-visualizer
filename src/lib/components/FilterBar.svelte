@@ -37,6 +37,18 @@
     <option value="closed">Closed</option>
   </select>
 
+  {#each filterStore.scopedLabelKeys as key}
+    <MultiSelect
+      label={key}
+      options={(filterStore.scopedLabelValues[key] ?? []).map((v) => ({
+        value: v,
+        label: v,
+      }))}
+      selected={filterStore.selectedScopedLabels[key] ?? []}
+      onchange={(v) => filterStore.setScopedLabelFilter(key, v)}
+    />
+  {/each}
+
   <MultiSelect
     label="Assignees"
     options={filterStore.allAssignees.map((a) => ({

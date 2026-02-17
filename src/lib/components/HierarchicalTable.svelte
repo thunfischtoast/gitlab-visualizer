@@ -66,6 +66,9 @@
       Name{sortIndicator("title")}
     </button>
     <div class="hidden w-48 flex-shrink-0 px-2 lg:block">Labels</div>
+    {#each filterStore.scopedLabelKeys as key}
+      <div class="hidden w-28 flex-shrink-0 px-2 lg:block">{key}</div>
+    {/each}
     <button
       class="w-20 flex-shrink-0 text-center transition-colors hover:text-foreground"
       onclick={() => filterStore.toggleSort("status")}

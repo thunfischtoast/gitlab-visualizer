@@ -1,6 +1,7 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import type { TreeEpic } from "$lib/types/gitlab.js";
+  import { filterStore } from "$lib/stores/filters.svelte.js";
   import LabelBadge from "./LabelBadge.svelte";
   import IssueRow from "./IssueRow.svelte";
   import { checkDuplicateKeys } from "$lib/utils/debug.js";
@@ -15,6 +16,24 @@
   let { treeEpic, depth, expanded, ontoggle }: Props = $props();
 
   let epic = $derived(treeEpic.epic);
+
+  let nonScopedLabels = $derived(
+    epic ? epic.labels.filter((l: string) => !l.includes("::")) : [],
+  );
+
+  let scopedValues = $derived.by(() => {
+    if (!epic) return {} as Record<string, string[]>;
+    const map: Record<string, string[]> = {};
+    for (const label of epic.labels) {
+      const idx = label.indexOf("::");
+      if (idx !== -1) {
+        const key = label.substring(0, idx);
+        const value = label.substring(idx + 2);
+        (map[key] ??= []).push(value);
+      }
+    }
+    return map;
+  });
 
   // Debug: check for duplicate issue keys
   $effect(() => {
@@ -58,14 +77,21 @@
     {/if}
   </div>
 
-  <!-- Labels column -->
+  <!-- Labels column (non-scoped only) -->
   <div class="hidden w-48 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
-    {#if epic}
-      {#each epic.labels as label}
-        <LabelBadge {label} />
-      {/each}
-    {/if}
+    {#each nonScopedLabels as label}
+      <LabelBadge {label} />
+    {/each}
   </div>
+
+  <!-- Scoped label columns -->
+  {#each filterStore.scopedLabelKeys as key}
+    <div class="hidden w-28 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
+      {#each scopedValues[key] ?? [] as value}
+        <LabelBadge label={value} />
+      {/each}
+    </div>
+  {/each}
 
   <!-- Status column -->
   <div class="w-20 flex-shrink-0 text-center text-xs">

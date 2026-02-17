@@ -7,12 +7,21 @@ import type {
   TreeEpic,
 } from "$lib/types/gitlab.js";
 
+// --- Helpers ---
+
+function parseScopedLabel(label: string): { key: string; value: string } | null {
+  const idx = label.indexOf("::");
+  if (idx === -1) return null;
+  return { key: label.substring(0, idx), value: label.substring(idx + 2) };
+}
+
 // --- Filter state ---
 
 let searchText = $state("");
 let selectedLabels = $state<string[]>([]);
 let statusFilter = $state<"all" | "opened" | "closed">("opened");
 let selectedAssignees = $state<string[]>([]);
+let selectedScopedLabels = $state<Record<string, string[]>>({});
 
 // --- Sort state ---
 
@@ -29,12 +38,58 @@ let sortActive = $state(false);
 let allLabels = $derived.by(() => {
   const labels = new Set<string>();
   for (const issue of dataStore.issues) {
-    for (const label of issue.labels) labels.add(label);
+    for (const label of issue.labels) {
+      if (!label.includes("::")) labels.add(label);
+    }
   }
   for (const epic of dataStore.epics) {
-    for (const label of epic.labels) labels.add(label);
+    for (const label of epic.labels) {
+      if (!label.includes("::")) labels.add(label);
+    }
   }
   return [...labels].sort();
+});
+
+let scopedLabelKeys = $derived.by(() => {
+  const keys = new Set<string>();
+  for (const issue of dataStore.issues) {
+    for (const label of issue.labels) {
+      const parsed = parseScopedLabel(label);
+      if (parsed) keys.add(parsed.key);
+    }
+  }
+  for (const epic of dataStore.epics) {
+    for (const label of epic.labels) {
+      const parsed = parseScopedLabel(label);
+      if (parsed) keys.add(parsed.key);
+    }
+  }
+  return [...keys].sort();
+});
+
+let scopedLabelValues = $derived.by(() => {
+  const map: Record<string, Set<string>> = {};
+  for (const issue of dataStore.issues) {
+    for (const label of issue.labels) {
+      const parsed = parseScopedLabel(label);
+      if (parsed) {
+        (map[parsed.key] ??= new Set()).add(parsed.value);
+      }
+    }
+  }
+  for (const epic of dataStore.epics) {
+    for (const label of epic.labels) {
+      const parsed = parseScopedLabel(label);
+      if (parsed) {
+        (map[parsed.key] ??= new Set()).add(parsed.value);
+      }
+    }
+  }
+  const result: Record<string, string[]> = {};
+  for (const [key, values] of Object.entries(map)) {
+    result[key] = [...values].sort();
+  }
+  return result;
 });
 
 let allAssignees = $derived.by((): GitLabAssignee[] => {
@@ -52,11 +107,15 @@ let allAssignees = $derived.by((): GitLabAssignee[] => {
 let filteredTree = $derived.by(() => applyFilters(dataStore.tree));
 
 function applyFilters(tree: TreeGroup[]): TreeGroup[] {
+  const hasScopedFilters = Object.values(selectedScopedLabels).some(
+    (v) => v.length > 0,
+  );
   const noFilters =
     searchText === "" &&
     selectedLabels.length === 0 &&
     statusFilter === "all" &&
-    selectedAssignees.length === 0;
+    selectedAssignees.length === 0 &&
+    !hasScopedFilters;
   const defaultSort = sortField === "iid" && sortDirection === "asc";
 
   if (noFilters && defaultSort) return tree;
@@ -110,6 +169,14 @@ function matchesFilters(issue: GitLabIssue): boolean {
     )
   )
     return false;
+  // Scoped labels: OR within a key, AND across keys
+  for (const [key, values] of Object.entries(selectedScopedLabels)) {
+    if (values.length === 0) continue;
+    const hasMatch = values.some((v) =>
+      issue.labels.includes(`${key}::${v}`),
+    );
+    if (!hasMatch) return false;
+  }
   return true;
 }
 
@@ -196,12 +263,26 @@ export const filterStore = {
     return filteredTree;
   },
 
+  get scopedLabelKeys() {
+    return scopedLabelKeys;
+  },
+  get scopedLabelValues() {
+    return scopedLabelValues;
+  },
+  get selectedScopedLabels() {
+    return selectedScopedLabels;
+  },
+  setScopedLabelFilter(key: string, values: string[]) {
+    selectedScopedLabels = { ...selectedScopedLabels, [key]: values };
+  },
+
   get hasActiveFilters() {
     return (
       searchText !== "" ||
       selectedLabels.length > 0 ||
       statusFilter !== "opened" ||
-      selectedAssignees.length > 0
+      selectedAssignees.length > 0 ||
+      Object.values(selectedScopedLabels).some((v) => v.length > 0)
     );
   },
 
@@ -210,5 +291,6 @@ export const filterStore = {
     selectedLabels = [];
     statusFilter = "opened";
     selectedAssignees = [];
+    selectedScopedLabels = {};
   },
 };
