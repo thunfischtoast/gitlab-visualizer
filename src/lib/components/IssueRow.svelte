@@ -45,11 +45,9 @@
   <!-- Status column -->
   <div class="w-20 flex-shrink-0 text-center text-xs">
     <span
-      class="inline-block rounded-full px-2 py-0.5"
-      class:bg-green-100={isOpen}
-      class:text-green-800={isOpen}
-      class:bg-blue-100={!isOpen}
-      class:text-blue-800={!isOpen}
+      class="inline-block rounded-full px-2 py-0.5 {isOpen
+        ? 'bg-green-500/15 text-green-700 dark:text-green-400'
+        : 'bg-blue-500/15 text-blue-700 dark:text-blue-400'}"
     >
       {issue.state}
     </span>

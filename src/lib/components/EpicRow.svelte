@@ -13,7 +13,6 @@
   let { treeEpic, depth, expanded, ontoggle }: Props = $props();
 
   let epic = $derived(treeEpic.epic);
-  let isNoEpic = $derived(epic === null);
 </script>
 
 <div
@@ -29,7 +28,7 @@
     <span class="inline-block w-4 flex-shrink-0 text-center text-muted-foreground">
       {expanded ? "\u25BE" : "\u25B8"}
     </span>
-    {#if isNoEpic}
+    {#if epic === null}
       <span class="italic text-muted-foreground">No Epic</span>
     {:else if epic}
       <a
@@ -39,7 +38,7 @@
         class="truncate text-foreground hover:underline"
         onclick={(e) => e.stopPropagation()}
       >
-        <span class="text-muted-foreground">&{epic.iid}</span>
+        <span class="text-muted-foreground">&amp;{epic.iid}</span>
         {epic.title}
       </a>
     {/if}
@@ -58,11 +57,9 @@
   <div class="w-20 flex-shrink-0 text-center text-xs">
     {#if epic}
       <span
-        class="inline-block rounded-full px-2 py-0.5"
-        class:bg-green-100={epic.state === "opened"}
-        class:text-green-800={epic.state === "opened"}
-        class:bg-blue-100={epic.state !== "opened"}
-        class:text-blue-800={epic.state !== "opened"}
+        class="inline-block rounded-full px-2 py-0.5 {epic.state === 'opened'
+          ? 'bg-green-500/15 text-green-700 dark:text-green-400'
+          : 'bg-blue-500/15 text-blue-700 dark:text-blue-400'}"
       >
         {epic.state}
       </span>

@@ -6,11 +6,10 @@
   let expandedKeys = $state(new Set<string>());
 
   function toggle(key: string) {
-    if (expandedKeys.has(key)) {
-      expandedKeys.delete(key);
-    } else {
-      expandedKeys.add(key);
-    }
+    const next = new Set(expandedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    expandedKeys = next;
   }
 
   function expandAll() {
