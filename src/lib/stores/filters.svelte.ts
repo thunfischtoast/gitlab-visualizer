@@ -11,7 +11,7 @@ import type {
 
 let searchText = $state("");
 let selectedLabels = $state<string[]>([]);
-let statusFilter = $state<"all" | "opened" | "closed">("all");
+let statusFilter = $state<"all" | "opened" | "closed">("opened");
 let selectedAssignees = $state<string[]>([]);
 
 // --- Sort state ---
@@ -200,7 +200,7 @@ export const filterStore = {
     return (
       searchText !== "" ||
       selectedLabels.length > 0 ||
-      statusFilter !== "all" ||
+      statusFilter !== "opened" ||
       selectedAssignees.length > 0
     );
   },
@@ -208,7 +208,7 @@ export const filterStore = {
   clearFilters() {
     searchText = "";
     selectedLabels = [];
-    statusFilter = "all";
+    statusFilter = "opened";
     selectedAssignees = [];
   },
 };
