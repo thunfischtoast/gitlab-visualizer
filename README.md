@@ -6,13 +6,17 @@ All data stays in your browser — nothing is sent to third parties.
 
 ## Features
 
-- **Hierarchical tree view**: Groups > Projects > Epics > Issues, all collapsible
-- **Two auth methods**: Paste a Personal Access Token, or use OAuth2 login
+- **Hierarchical tree view**: Groups > Projects > Epics > Issues, all collapsible with expand/collapse all
+- **Two auth methods**: Paste a Personal Access Token, or use OAuth2 login (PKCE)
 - **Works with self-hosted GitLab**: Enter any GitLab instance URL
 - **Filtering**: Search by text, label, status (open/closed), or assignee
+- **Sorting**: Click column headers to sort issues by title, status, or IID
 - **Labels**: Displayed as colored badges
 - **Clickable links**: Titles link back to GitLab originals
-- **Local caching**: Fetched data is cached in LocalStorage to avoid re-fetching
+- **Local caching**: Fetched data is cached in LocalStorage (1-hour TTL) to avoid re-fetching
+- **Responsive**: Labels and assignee columns hide on smaller screens
+- **Keyboard accessible**: Enter/Space to expand/collapse, focus-visible rings on all interactive elements
+- **Error recovery**: Error boundary with retry, per-component error handling for API failures
 
 ## Getting Started
 

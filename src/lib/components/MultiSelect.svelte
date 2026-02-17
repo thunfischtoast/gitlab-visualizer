@@ -50,7 +50,7 @@
 
 <div class="relative" bind:this={containerEl}>
   <button
-    class="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+    class="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     onclick={() => {
       if (open) close();
       else open = true;

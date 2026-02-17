@@ -44,6 +44,13 @@ src/
 - `npm run build` — production build
 - `npm run check` — TypeScript + Svelte type checking
 
+## UI Patterns
+
+- **Error boundary**: `App.svelte` wraps the entire UI in `<svelte:boundary>` with a `{#snippet failed}` fallback. This catches render errors only — async/event errors are handled per-component.
+- **Responsive columns**: Labels hidden below `lg` (1024px), Assignee hidden below `md` (768px). Applied in column headers (HierarchicalTable) and all row components.
+- **Transitions**: `out:slide` (not `transition:slide`) on expand/collapse wrappers to avoid intro animation on first mount.
+- **Accessibility**: All expandable rows have `role="button"`, `tabindex="0"`, `onkeydown` for Enter/Space (with `e.preventDefault()`), and `focus-visible:ring-2 focus-visible:ring-ring`.
+
 ## GitLab API Notes
 
 - Auth: `PRIVATE-TOKEN` header (PAT) or `Authorization: Bearer` (OAuth2)

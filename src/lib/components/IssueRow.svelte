@@ -13,7 +13,7 @@
 </script>
 
 <div
-  class="flex items-center border-b border-border py-1.5 text-sm hover:bg-accent/50"
+  class="flex items-center border-b border-border py-1.5 text-sm transition-colors hover:bg-accent/50"
   style="padding-left: {depth * 1.5 + 0.75}rem;"
 >
   <!-- Name column -->
@@ -36,7 +36,7 @@
   </div>
 
   <!-- Labels column -->
-  <div class="flex w-48 flex-shrink-0 flex-wrap gap-1 px-2">
+  <div class="hidden w-48 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
     {#each issue.labels as label}
       <LabelBadge {label} />
     {/each}
@@ -54,7 +54,7 @@
   </div>
 
   <!-- Assignee column -->
-  <div class="flex w-32 flex-shrink-0 items-center gap-1 px-2">
+  <div class="hidden w-32 flex-shrink-0 items-center gap-1 px-2 md:flex">
     {#each issue.assignees.slice(0, 3) as assignee}
       <img
         src={assignee.avatar_url}
