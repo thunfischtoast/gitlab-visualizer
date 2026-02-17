@@ -41,3 +41,34 @@ export interface GitLabIssue {
   epic_iid: number | null;
   milestone: { title: string } | null;
 }
+
+// Tree structure for rendering the hierarchical table
+
+export interface TreeEpic {
+  epic: GitLabEpic | null; // null = "No Epic" bucket
+  issues: GitLabIssue[];
+  expanded: boolean;
+}
+
+export interface TreeProject {
+  project: GitLabProject;
+  epics: TreeEpic[];
+  expanded: boolean;
+}
+
+export interface TreeGroup {
+  group: GitLabGroup;
+  subgroups: TreeGroup[];
+  projects: TreeProject[];
+  expanded: boolean;
+}
+
+// Cached data stored in localStorage
+
+export interface CachedData {
+  groups: GitLabGroup[];
+  projects: GitLabProject[];
+  epics: GitLabEpic[];
+  issues: GitLabIssue[];
+  timestamp: number;
+}
