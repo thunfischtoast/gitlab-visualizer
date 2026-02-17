@@ -7,7 +7,7 @@
 <div class="flex flex-wrap items-center gap-2">
   <Input
     type="text"
-    placeholder="Search issues..."
+    placeholder="Search title & description..."
     class="w-full sm:w-64"
     value={filterStore.searchText}
     oninput={(e: Event) => {

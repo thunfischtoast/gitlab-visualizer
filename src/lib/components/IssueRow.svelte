@@ -32,6 +32,8 @@
     }
     return map;
   });
+
+  let searchSnippet = $derived(filterStore.getIssueSearchSnippet(issue));
 </script>
 
 <div
@@ -41,20 +43,25 @@
   <!-- Name column -->
   <div class="flex min-w-0 flex-1 items-center gap-2">
     <span
-      class="inline-block h-2 w-2 flex-shrink-0 rounded-full"
-      class:bg-green-500={isOpen}
-      class:bg-blue-500={!isOpen}
+      class="inline-block h-2 w-2 flex-shrink-0 rounded-full {isOpen ? 'bg-green-500' : 'bg-blue-500'}"
       title={issue.state}
     ></span>
-    <a
-      href={issue.web_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="truncate text-foreground hover:underline"
-    >
-      <span class="text-muted-foreground">#{issue.iid}</span>
-      {issue.title}
-    </a>
+    <div class="min-w-0 flex-1">
+      <a
+        href={issue.web_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="truncate block text-foreground hover:underline"
+      >
+        <span class="text-muted-foreground">#{issue.iid}</span>
+        {issue.title}
+      </a>
+      {#if searchSnippet}
+        <p class="truncate text-xs text-muted-foreground">
+          {searchSnippet.before}<mark class="bg-yellow-200 text-foreground dark:bg-yellow-800">{searchSnippet.match}</mark>{searchSnippet.after}
+        </p>
+      {/if}
+    </div>
   </div>
 
   <!-- Labels column (non-scoped only) -->

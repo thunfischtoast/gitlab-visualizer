@@ -17,6 +17,7 @@ export interface GitLabEpic {
   id: number;
   iid: number;
   title: string;
+  description: string | null;
   web_url: string;
   group_id: number;
   labels: string[];
@@ -33,6 +34,7 @@ export interface GitLabIssue {
   id: number;
   iid: number;
   title: string;
+  description: string | null;
   web_url: string;
   project_id: number;
   state: string;

@@ -1,5 +1,6 @@
 import { dataStore } from "$lib/stores/data.svelte.js";
 import type {
+  GitLabEpic,
   GitLabIssue,
   GitLabAssignee,
   TreeGroup,
@@ -13,6 +14,35 @@ function parseScopedLabel(label: string): { key: string; value: string } | null 
   const idx = label.indexOf("::");
   if (idx === -1) return null;
   return { key: label.substring(0, idx), value: label.substring(idx + 2) };
+}
+
+// --- Search snippet extraction ---
+
+export type SearchSnippet = { before: string; match: string; after: string };
+
+function extractSnippet(
+  text: string,
+  query: string,
+  contextChars = 60,
+): SearchSnippet | null {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const lower = normalized.toLowerCase();
+  const idx = lower.indexOf(query.toLowerCase());
+  if (idx === -1) return null;
+
+  const start = Math.max(0, idx - contextChars);
+  const end = Math.min(
+    normalized.length,
+    idx + query.length + contextChars,
+  );
+
+  return {
+    before: (start > 0 ? "\u2026" : "") + normalized.substring(start, idx),
+    match: normalized.substring(idx, idx + query.length),
+    after:
+      normalized.substring(idx + query.length, end) +
+      (end < normalized.length ? "\u2026" : ""),
+  };
 }
 
 // --- Scoped column state ---
@@ -155,21 +185,46 @@ function filterGroup(tg: TreeGroup): TreeGroup {
 function filterProject(tp: TreeProject): TreeProject {
   const epics = tp.epics
     .map(filterEpic)
-    .filter((e) => e.issues.length > 0);
+    .filter((e) => e.issues.length > 0 || epicMatchesSearch(e.epic));
 
   return { project: tp.project, epics };
+}
+
+function epicMatchesSearch(epic: GitLabEpic | null): boolean {
+  if (!epic || !searchText) return false;
+  const query = searchText.toLowerCase();
+  return (
+    epic.title.toLowerCase().includes(query) ||
+    (epic.description?.toLowerCase().includes(query) ?? false)
+  );
 }
 
 function filterEpic(te: TreeEpic): TreeEpic {
   let issues = te.issues.filter(matchesFilters);
   issues = sortIssues(issues);
+
+  // When searching, partition: title matches first, then description-only
+  if (searchText) {
+    const query = searchText.toLowerCase();
+    const titleMatches = issues.filter((i) =>
+      i.title.toLowerCase().includes(query),
+    );
+    const descOnly = issues.filter(
+      (i) => !i.title.toLowerCase().includes(query),
+    );
+    issues = [...titleMatches, ...descOnly];
+  }
+
   return { epic: te.epic, issues };
 }
 
 function matchesFilters(issue: GitLabIssue): boolean {
   if (searchText) {
     const query = searchText.toLowerCase();
-    if (!issue.title.toLowerCase().includes(query)) return false;
+    const titleMatch = issue.title.toLowerCase().includes(query);
+    const descMatch =
+      issue.description?.toLowerCase().includes(query) ?? false;
+    if (!titleMatch && !descMatch) return false;
   }
   if (statusFilter !== "all" && issue.state !== statusFilter) return false;
   if (
@@ -298,6 +353,23 @@ export const filterStore = {
   },
   setScopedLabelFilter(key: string, values: string[]) {
     selectedScopedLabels = { ...selectedScopedLabels, [key]: values };
+  },
+
+  /** Returns a snippet for description-only matches, or null for title matches / no search */
+  getIssueSearchSnippet(issue: GitLabIssue): SearchSnippet | null {
+    if (!searchText) return null;
+    const query = searchText.toLowerCase();
+    if (issue.title.toLowerCase().includes(query)) return null;
+    if (!issue.description) return null;
+    return extractSnippet(issue.description, searchText);
+  },
+
+  getEpicSearchSnippet(epic: GitLabEpic): SearchSnippet | null {
+    if (!searchText) return null;
+    const query = searchText.toLowerCase();
+    if (epic.title.toLowerCase().includes(query)) return null;
+    if (!epic.description) return null;
+    return extractSnippet(epic.description, searchText);
   },
 
   get hasActiveFilters() {

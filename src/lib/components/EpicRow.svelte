@@ -41,6 +41,10 @@
     return map;
   });
 
+  let searchSnippet = $derived(
+    epic ? filterStore.getEpicSearchSnippet(epic) : null,
+  );
+
   // Debug: check for duplicate issue keys
   $effect(() => {
     if (expanded) {
@@ -70,16 +74,23 @@
     {#if epic === null}
       <span class="italic text-muted-foreground">No Epic</span>
     {:else if epic}
-      <a
-        href={epic.web_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="truncate text-foreground hover:underline"
-        onclick={(e) => e.stopPropagation()}
-      >
-        <span class="text-muted-foreground">&amp;{epic.iid}</span>
-        {epic.title}
-      </a>
+      <div class="min-w-0 flex-1">
+        <a
+          href={epic.web_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="truncate block text-foreground hover:underline"
+          onclick={(e) => e.stopPropagation()}
+        >
+          <span class="text-muted-foreground">&amp;{epic.iid}</span>
+          {epic.title}
+        </a>
+        {#if searchSnippet}
+          <p class="truncate text-xs text-muted-foreground">
+            {searchSnippet.before}<mark class="bg-yellow-200 text-foreground dark:bg-yellow-800">{searchSnippet.match}</mark>{searchSnippet.after}
+          </p>
+        {/if}
+      </div>
     {/if}
   </div>
 
