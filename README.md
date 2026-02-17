@@ -9,7 +9,7 @@ All data stays in your browser — nothing is sent to third parties.
 - **Hierarchical tree view**: Groups > Projects > Epics > Issues, all collapsible with expand/collapse all
 - **Two auth methods**: Paste a Personal Access Token, or use OAuth2 login (PKCE)
 - **Works with self-hosted GitLab**: Enter any GitLab instance URL
-- **Filtering**: Search by text, label, status (open/closed), or assignee
+- **Filtering**: Search by title & description (with match preview), label, scoped labels, status (open/closed), or assignee
 - **Sorting**: Click column headers to sort issues by title, status, or IID
 - **Labels**: Displayed as colored badges
 - **Clickable links**: Titles link back to GitLab originals
