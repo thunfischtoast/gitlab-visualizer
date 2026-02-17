@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { GitLabIssue } from "$lib/types/gitlab.js";
+  import { filterStore } from "$lib/stores/filters.svelte.js";
   import LabelBadge from "./LabelBadge.svelte";
 
   interface Props {
@@ -10,6 +11,27 @@
   let { issue, depth }: Props = $props();
 
   let isOpen = $derived(issue.state === "opened");
+
+  let nonScopedLabels = $derived(
+    issue.labels.filter((l) => {
+      const idx = l.indexOf("::");
+      if (idx === -1) return true;
+      return !filterStore.activeScopedKeys.includes(l.substring(0, idx));
+    }),
+  );
+
+  let scopedValues = $derived.by(() => {
+    const map: Record<string, string[]> = {};
+    for (const label of issue.labels) {
+      const idx = label.indexOf("::");
+      if (idx !== -1) {
+        const key = label.substring(0, idx);
+        const value = label.substring(idx + 2);
+        (map[key] ??= []).push(value);
+      }
+    }
+    return map;
+  });
 </script>
 
 <div
@@ -35,12 +57,21 @@
     </a>
   </div>
 
-  <!-- Labels column -->
+  <!-- Labels column (non-scoped only) -->
   <div class="hidden w-48 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
-    {#each issue.labels as label}
+    {#each nonScopedLabels as label}
       <LabelBadge {label} />
     {/each}
   </div>
+
+  <!-- Scoped label columns -->
+  {#each filterStore.activeScopedKeys as key}
+    <div class="hidden w-28 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
+      {#each scopedValues[key] ?? [] as value}
+        <LabelBadge label={value} />
+      {/each}
+    </div>
+  {/each}
 
   <!-- Status column -->
   <div class="w-20 flex-shrink-0 text-center text-xs">

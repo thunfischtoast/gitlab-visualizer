@@ -3,6 +3,7 @@
   import { collectAllKeys } from "$lib/utils/tree.js";
   import { checkDuplicateKeys } from "$lib/utils/debug.js";
   import GroupRow from "./GroupRow.svelte";
+  import MultiSelect from "./MultiSelect.svelte";
 
   let expandedKeys = $state(new Set<string>());
 
@@ -40,7 +41,7 @@
 
 <div>
   <!-- Toolbar -->
-  <div class="mb-2 flex gap-2">
+  <div class="mb-2 flex items-center gap-2">
     <button
       class="rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onclick={expandAll}
@@ -53,6 +54,21 @@
     >
       Collapse All
     </button>
+    {#if filterStore.scopedLabelKeys.length > 0}
+      <div class="ml-auto hidden lg:block">
+        <MultiSelect
+          label="Columns"
+          options={filterStore.scopedLabelKeys.map((k) => ({
+            value: k,
+            label: k,
+          }))}
+          selected={filterStore.enabledScopedKeys}
+          onchange={(v) => {
+            filterStore.enabledScopedKeys = v;
+          }}
+        />
+      </div>
+    {/if}
   </div>
 
   <!-- Column headers -->
@@ -66,6 +82,9 @@
       Name{sortIndicator("title")}
     </button>
     <div class="hidden w-48 flex-shrink-0 px-2 lg:block">Labels</div>
+    {#each filterStore.activeScopedKeys as key}
+      <div class="hidden w-28 flex-shrink-0 px-2 lg:block">{key}</div>
+    {/each}
     <button
       class="w-20 flex-shrink-0 text-center transition-colors hover:text-foreground"
       onclick={() => filterStore.toggleSort("status")}

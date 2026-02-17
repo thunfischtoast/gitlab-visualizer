@@ -1,6 +1,7 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import type { TreeGroup } from "$lib/types/gitlab.js";
+  import { filterStore } from "$lib/stores/filters.svelte.js";
   import GroupRow from "./GroupRow.svelte";
   import ProjectRow from "./ProjectRow.svelte";
   import { countIssues } from "$lib/utils/tree.js";
@@ -46,6 +47,11 @@
 
   <!-- Labels column -->
   <div class="hidden w-48 flex-shrink-0 px-2 lg:block"></div>
+
+  <!-- Scoped label columns (spacers) -->
+  {#each filterStore.activeScopedKeys as key}
+    <div class="hidden w-28 flex-shrink-0 px-2 lg:block"></div>
+  {/each}
 
   <!-- Status column -->
   <div class="w-20 flex-shrink-0"></div>
