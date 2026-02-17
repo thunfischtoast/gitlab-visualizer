@@ -1,9 +1,11 @@
 <script lang="ts">
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
+  import FilterBar from "$lib/components/FilterBar.svelte";
   import HierarchicalTable from "$lib/components/HierarchicalTable.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
   import { dataStore } from "$lib/stores/data.svelte.js";
+  import { filterStore } from "$lib/stores/filters.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
@@ -86,6 +88,7 @@
   }
 
   function handleRefresh() {
+    filterStore.clearFilters();
     view = "loading";
   }
 
@@ -135,6 +138,9 @@
           </span>
         {/if}
       </p>
+      <div class="mb-3">
+        <FilterBar />
+      </div>
       <HierarchicalTable />
     </div>
   {/if}
