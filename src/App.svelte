@@ -136,13 +136,13 @@
             </div>
             <div class="flex gap-2">
               <button
-                class="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent"
+                class="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onclick={handleRefresh}
               >
                 Refresh
               </button>
               <button
-                class="rounded-md border px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                class="rounded-md border px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onclick={handleDisconnect}
               >
                 Disconnect
@@ -170,13 +170,13 @@
           </p>
           <div class="flex justify-center gap-2">
             <button
-              class="rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent"
+              class="rounded-md border px-4 py-2 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onclick={reset}
             >
               Try again
             </button>
             <button
-              class="rounded-md border px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
+              class="rounded-md border px-4 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onclick={handleDisconnect}
             >
               Disconnect

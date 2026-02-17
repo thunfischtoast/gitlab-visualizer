@@ -20,7 +20,7 @@
 </script>
 
 <div
-  class="flex cursor-pointer items-center border-b border-border py-1.5 text-sm font-medium transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+  class="flex cursor-pointer items-center border-b border-border py-1.5 text-sm font-medium transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
   style="padding-left: {depth * 1.5}rem;"
   onclick={() => ontoggle(projectKey)}
   onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ontoggle(projectKey); } }}
@@ -29,10 +29,9 @@
 >
   <!-- Name column -->
   <div class="flex min-w-0 flex-1 items-center gap-2">
-    <span
-      class="inline-block w-4 flex-shrink-0 text-center text-muted-foreground transition-transform duration-150"
-      class:rotate-90={expanded}
-    >&#9656;</span>
+    <span class="inline-block w-4 flex-shrink-0 text-center text-muted-foreground">
+      {expanded ? "\u25BE" : "\u25B8"}
+    </span>
     <span class="truncate">{treeProject.project.name}</span>
   </div>
 
@@ -52,7 +51,7 @@
 </div>
 
 {#if expanded}
-  <div transition:slide={{ duration: 150 }}>
+  <div out:slide={{ duration: 150 }}>
     {#each treeProject.epics as treeEpic (treeEpic.epic?.id ?? `no-epic-${treeProject.project.id}`)}
       {@const epicKey = treeEpic.epic
         ? `epic-${treeEpic.epic.group_id}-${treeEpic.epic.iid}`

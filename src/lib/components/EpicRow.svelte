@@ -17,7 +17,7 @@
 </script>
 
 <div
-  class="flex cursor-pointer items-center border-b border-border py-1.5 text-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+  class="flex cursor-pointer items-center border-b border-border py-1.5 text-sm transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
   style="padding-left: {depth * 1.5}rem;"
   onclick={ontoggle}
   onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ontoggle(); } }}
@@ -26,10 +26,9 @@
 >
   <!-- Name column -->
   <div class="flex min-w-0 flex-1 items-center gap-2">
-    <span
-      class="inline-block w-4 flex-shrink-0 text-center text-muted-foreground transition-transform duration-150"
-      class:rotate-90={expanded}
-    >&#9656;</span>
+    <span class="inline-block w-4 flex-shrink-0 text-center text-muted-foreground">
+      {expanded ? "\u25BE" : "\u25B8"}
+    </span>
     {#if epic === null}
       <span class="italic text-muted-foreground">No Epic</span>
     {:else if epic}
@@ -78,7 +77,7 @@
 </div>
 
 {#if expanded}
-  <div transition:slide={{ duration: 150 }}>
+  <div out:slide={{ duration: 150 }}>
     {#each treeEpic.issues as issue (issue.id)}
       <IssueRow {issue} depth={depth + 1} />
     {/each}
