@@ -28,9 +28,11 @@
   let {
     onloaded,
     oncancel,
+    selectedGroupIds = [],
   }: {
     onloaded: (data: LoadResult) => void;
     oncancel: () => void;
+    selectedGroupIds?: number[];
   } = $props();
 
   let phase = $state("Fetching groups...");
@@ -38,6 +40,41 @@
   let total = $state(0);
   let error = $state("");
   let abortController: AbortController | null = null;
+
+  /** BFS from selected top-level IDs through parent_id to find all descendant subgroups. */
+  function filterGroupsBySelection(allGroups: GitLabGroup[], selectedIds: number[]): GitLabGroup[] {
+    if (selectedIds.length === 0) return allGroups;
+
+    // Build children map: parent_id → child groups
+    const childrenMap = new Map<number, GitLabGroup[]>();
+    for (const g of allGroups) {
+      if (g.parent_id !== null) {
+        let children = childrenMap.get(g.parent_id);
+        if (!children) {
+          children = [];
+          childrenMap.set(g.parent_id, children);
+        }
+        children.push(g);
+      }
+    }
+
+    // BFS from selected IDs
+    const result: GitLabGroup[] = [];
+    const visited = new Set<number>();
+    const queue = allGroups.filter((g) => selectedIds.includes(g.id));
+
+    for (const g of queue) {
+      if (visited.has(g.id)) continue;
+      visited.add(g.id);
+      result.push(g);
+      const children = childrenMap.get(g.id);
+      if (children) {
+        queue.push(...children);
+      }
+    }
+
+    return result;
+  }
 
   function getConfig(): ClientConfig {
     return {
@@ -64,14 +101,17 @@
       // Deduplicate groups by id (top_level_only=false may return nested groups)
       const uniqueGroups = [...new Map(groups.map((g) => [g.id, g])).values()];
 
+      // Filter to selected groups + their descendants
+      const groupsToLoad = filterGroupsBySelection(uniqueGroups, selectedGroupIds);
+
       // Phase 2: Fetch projects per group (parallel, throttled by concurrency limiter)
       phase = "Fetching projects...";
       progress = 0;
-      total = uniqueGroups.length;
+      total = groupsToLoad.length;
       const allProjects: GitLabProject[] = [];
       const seenProjectIds = new Set<number>();
 
-      await Promise.all(uniqueGroups.map(async (group) => {
+      await Promise.all(groupsToLoad.map(async (group) => {
         const projects = await fetchProjectsForGroup(config, group.id, signal);
         for (const p of projects) {
           if (!seenProjectIds.has(p.id)) {
@@ -87,11 +127,11 @@
       // so fetching for every group produces duplicates. Deduplicate by epic id.
       phase = "Fetching epics...";
       progress = 0;
-      total = uniqueGroups.length;
+      total = groupsToLoad.length;
       const allEpics: GitLabEpic[] = [];
       const seenEpicIds = new Set<number>();
 
-      await Promise.all(uniqueGroups.map(async (group) => {
+      await Promise.all(groupsToLoad.map(async (group) => {
         const epics = await fetchEpicsForGroup(config, group.id, signal);
         for (const e of epics) {
           if (!seenEpicIds.has(e.id)) {
@@ -115,7 +155,7 @@
       }));
 
       onloaded({
-        groups: uniqueGroups,
+        groups: groupsToLoad,
         projects: allProjects,
         epics: allEpics,
         issues: allIssues,

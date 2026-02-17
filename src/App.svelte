@@ -1,17 +1,19 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
+  import GroupPicker from "$lib/components/GroupPicker.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
   import FilterBar from "$lib/components/FilterBar.svelte";
   import HierarchicalTable from "$lib/components/HierarchicalTable.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
+  import { groupSelectionStore } from "$lib/stores/groupSelection.svelte.js";
   import { dataStore } from "$lib/stores/data.svelte.js";
   import { filterStore } from "$lib/stores/filters.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
   import ThemeToggle from "$lib/components/ThemeToggle.svelte";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
-  type AppView = "connection" | "loading" | "main";
+  type AppView = "connection" | "group-picker" | "loading" | "main";
 
   // Check for OAuth callback before deciding initial view
   const hasOAuthCode = new URLSearchParams(window.location.search).has("code");
@@ -21,11 +23,13 @@
 
   let view = $state<AppView>(
     hasFreshCache ? "main" :
-    connectionStore.isConnected ? "loading" :
     hasOAuthCode ? "loading" :
+    connectionStore.isConnected && groupSelectionStore.hasSelection ? "loading" :
+    connectionStore.isConnected ? "group-picker" :
     "connection"
   );
   let oauthError = $state("");
+  let loadingSource = $state<"connect" | "refresh">("connect");
 
   // Handle OAuth callback on app load
   async function handleOAuthCallback() {
@@ -60,7 +64,7 @@
         clientId: connectionStore.clientId,
       });
 
-      view = "loading";
+      view = groupSelectionStore.hasSelection ? "loading" : "group-picker";
     } catch (err) {
       oauthError = err instanceof Error ? err.message : "OAuth token exchange failed";
       view = "connection";
@@ -72,7 +76,7 @@
 
   function handleConnected() {
     oauthError = "";
-    view = "loading";
+    view = groupSelectionStore.hasSelection ? "loading" : "group-picker";
   }
 
   function handleLoaded(data: {
@@ -85,17 +89,28 @@
     view = "main";
   }
 
-  function handleLoadCancel() {
+  function handleGroupPickerConfirm() {
+    loadingSource = "connect";
+    view = "loading";
+  }
+
+  function handleGroupPickerCancel() {
     view = "connection";
+  }
+
+  function handleLoadCancel() {
+    view = loadingSource === "refresh" ? "main" : "group-picker";
   }
 
   function handleRefresh() {
     filterStore.clearFilters();
+    loadingSource = "refresh";
     view = "loading";
   }
 
   function handleDisconnect() {
     connectionStore.disconnect();
+    groupSelectionStore.clear();
     dataStore.clear();
     view = "connection";
   }
@@ -121,11 +136,17 @@
         </div>
       {/if}
 
+    {:else if view === "group-picker"}
+      <div class="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+      <GroupPicker onconfirm={handleGroupPickerConfirm} oncancel={handleGroupPickerCancel} />
+
     {:else if view === "loading"}
       <div class="fixed top-4 right-4 z-10">
         <ThemeToggle />
       </div>
-      <DataLoader onloaded={handleLoaded} oncancel={handleLoadCancel} />
+      <DataLoader onloaded={handleLoaded} oncancel={handleLoadCancel} selectedGroupIds={groupSelectionStore.selectedIds} />
 
     {:else if view === "main"}
       <!-- Sticky header -->
