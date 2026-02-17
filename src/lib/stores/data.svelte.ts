@@ -52,7 +52,10 @@ function loadFromCache(): boolean {
   if (!cached) return false;
 
   const age = Date.now() - cached.timestamp;
-  if (age > CACHE_MAX_AGE_MS) return false;
+  if (age > CACHE_MAX_AGE_MS) {
+    removeFromStorage(STORAGE_KEY);
+    return false;
+  }
 
   groups = cached.groups;
   projects = cached.projects;
@@ -63,14 +66,13 @@ function loadFromCache(): boolean {
 }
 
 function persist() {
-  const data: CachedData = {
+  saveToStorage(STORAGE_KEY, {
     groups,
     projects,
     epics,
     issues,
-    timestamp: cacheTimestamp ?? Date.now(),
-  };
-  saveToStorage(STORAGE_KEY, data);
+    timestamp: cacheTimestamp!,
+  } satisfies CachedData);
 }
 
 // --- Tree building ---
@@ -105,8 +107,28 @@ function buildTree(
     list.push(epic);
   }
 
+  // Group lookup for ancestor traversal
+  const groupMap = new Map<number, GitLabGroup>();
+  for (const g of groups) {
+    groupMap.set(g.id, g);
+  }
+
+  // Collect epics from a group and all its ancestors (issues can reference
+  // epics from parent groups, not just the project's direct group)
+  function collectEpicsForGroup(groupId: number): GitLabEpic[] {
+    const result: GitLabEpic[] = [];
+    let currentId: number | null = groupId;
+    while (currentId !== null) {
+      const groupEpics = epicsByGroup.get(currentId);
+      if (groupEpics) result.push(...groupEpics);
+      const group = groupMap.get(currentId);
+      currentId = group?.parent_id && groupMap.has(group.parent_id) ? group.parent_id : null;
+    }
+    return result;
+  }
+
   // Build TreeProject for each project
-  function buildTreeProject(project: GitLabProject, groupEpics: GitLabEpic[]): TreeProject {
+  function buildTreeProject(project: GitLabProject, availableEpics: GitLabEpic[]): TreeProject {
     const projectIssues = issuesByProject.get(project.id) ?? [];
 
     // Group issues by epic_iid
@@ -124,20 +146,20 @@ function buildTree(
     // Build TreeEpic for each epic that has issues in this project
     const treeEpics: TreeEpic[] = [];
 
-    for (const epic of groupEpics) {
+    for (const epic of availableEpics) {
       const epicIssues = issuesByEpic.get(epic.iid);
       if (epicIssues && epicIssues.length > 0) {
-        treeEpics.push({ epic, issues: epicIssues, expanded: false });
+        treeEpics.push({ epic, issues: epicIssues });
       }
     }
 
     // "No Epic" bucket for issues without an epic
     const noEpicIssues = issuesByEpic.get(null);
     if (noEpicIssues && noEpicIssues.length > 0) {
-      treeEpics.push({ epic: null, issues: noEpicIssues, expanded: false });
+      treeEpics.push({ epic: null, issues: noEpicIssues });
     }
 
-    return { project, epics: treeEpics, expanded: false };
+    return { project, epics: treeEpics };
   }
 
   // Index projects by namespace group id
@@ -152,29 +174,18 @@ function buildTree(
     list.push(project);
   }
 
-  // Build group tree with subgroups
-  const groupMap = new Map<number, GitLabGroup>();
-  for (const g of groups) {
-    groupMap.set(g.id, g);
-  }
-
   function buildTreeGroup(group: GitLabGroup): TreeGroup {
     const groupProjects = projectsByGroup.get(group.id) ?? [];
-    const groupEpics = epicsByGroup.get(group.id) ?? [];
+    const availableEpics = collectEpicsForGroup(group.id);
 
-    const treeProjects = groupProjects.map((p) => buildTreeProject(p, groupEpics));
+    const treeProjects = groupProjects.map((p) => buildTreeProject(p, availableEpics));
 
     // Find direct child subgroups
     const subgroups = groups
       .filter((g) => g.parent_id === group.id)
       .map(buildTreeGroup);
 
-    return {
-      group,
-      subgroups,
-      projects: treeProjects,
-      expanded: false,
-    };
+    return { group, subgroups, projects: treeProjects };
   }
 
   // Top-level groups (no parent, or parent not in our fetched set)
