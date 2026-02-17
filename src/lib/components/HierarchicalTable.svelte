@@ -1,9 +1,15 @@
 <script lang="ts">
   import { filterStore, type SortField } from "$lib/stores/filters.svelte.js";
   import { collectAllKeys } from "$lib/utils/tree.js";
+  import { checkDuplicateKeys } from "$lib/utils/debug.js";
   import GroupRow from "./GroupRow.svelte";
 
   let expandedKeys = $state(new Set<string>());
+
+  // Debug: check for duplicate keys whenever filteredTree changes
+  $effect(() => {
+    checkDuplicateKeys("HierarchicalTable", "filteredTree group keys", filterStore.filteredTree, (tg) => tg.group.id);
+  });
 
   function toggle(key: string) {
     const next = new Set(expandedKeys);

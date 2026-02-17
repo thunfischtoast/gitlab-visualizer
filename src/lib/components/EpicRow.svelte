@@ -3,6 +3,7 @@
   import type { TreeEpic } from "$lib/types/gitlab.js";
   import LabelBadge from "./LabelBadge.svelte";
   import IssueRow from "./IssueRow.svelte";
+  import { checkDuplicateKeys } from "$lib/utils/debug.js";
 
   interface Props {
     treeEpic: TreeEpic;
@@ -14,6 +15,18 @@
   let { treeEpic, depth, expanded, ontoggle }: Props = $props();
 
   let epic = $derived(treeEpic.epic);
+
+  // Debug: check for duplicate issue keys
+  $effect(() => {
+    if (expanded) {
+      checkDuplicateKeys(
+        "EpicRow",
+        `issues in epic "${epic?.title ?? "No Epic"}" (id=${epic?.id ?? "none"})`,
+        treeEpic.issues,
+        (i) => i.id,
+      );
+    }
+  });
 </script>
 
 <div

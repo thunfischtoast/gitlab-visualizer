@@ -1,4 +1,5 @@
 import { loadFromStorage, saveToStorage, removeFromStorage } from "$lib/utils/storage.js";
+import { debugLog, debugWarn, debugError, checkDuplicateKeys } from "$lib/utils/debug.js";
 import type {
   GitLabGroup,
   GitLabProject,
@@ -85,6 +86,15 @@ function buildTree(
 ): TreeGroup[] {
   if (groups.length === 0) return [];
 
+  debugLog("buildTree", `Input: ${groups.length} groups, ${projects.length} projects, ${epics.length} epics, ${issues.length} issues`);
+
+  // --- Check raw data for duplicates ---
+  checkDuplicateKeys("buildTree", "raw groups", groups, (g) => g.id);
+  checkDuplicateKeys("buildTree", "raw projects", projects, (p) => p.id);
+  checkDuplicateKeys("buildTree", "raw epics (by id)", epics, (e) => e.id);
+  checkDuplicateKeys("buildTree", "raw epics (by group_id+iid)", epics, (e) => `${e.group_id}:${e.iid}`);
+  checkDuplicateKeys("buildTree", "raw issues", issues, (i) => i.id);
+
   // Index issues by project_id
   const issuesByProject = new Map<number, GitLabIssue[]>();
   for (const issue of issues) {
@@ -107,6 +117,14 @@ function buildTree(
     list.push(epic);
   }
 
+  // Log epicsByGroup for duplicate detection
+  for (const [groupId, groupEpics] of epicsByGroup) {
+    const dupes = checkDuplicateKeys("buildTree", `epicsByGroup[${groupId}]`, groupEpics, (e) => e.id);
+    if (dupes.length > 0) {
+      debugError("buildTree", `epicsByGroup[${groupId}] has duplicate epic IDs — this is the bug source!`, groupEpics);
+    }
+  }
+
   // Group lookup for ancestor traversal
   const groupMap = new Map<number, GitLabGroup>();
   for (const g of groups) {
@@ -118,11 +136,17 @@ function buildTree(
   function collectEpicsForGroup(groupId: number): GitLabEpic[] {
     const result: GitLabEpic[] = [];
     let currentId: number | null = groupId;
+    const visited: number[] = [];
     while (currentId !== null) {
+      visited.push(currentId);
       const groupEpics = epicsByGroup.get(currentId);
       if (groupEpics) result.push(...groupEpics);
       const group = groupMap.get(currentId);
       currentId = group?.parent_id && groupMap.has(group.parent_id) ? group.parent_id : null;
+    }
+    const dupes = checkDuplicateKeys("buildTree", `collectEpicsForGroup(${groupId}) traversed=[${visited.join("->")}]`, result, (e) => e.id);
+    if (dupes.length > 0) {
+      debugError("buildTree", `collectEpicsForGroup(${groupId}) returned duplicate epics!`, result.map(e => ({ id: e.id, iid: e.iid, group_id: e.group_id, title: e.title })));
     }
     return result;
   }
@@ -159,6 +183,28 @@ function buildTree(
       treeEpics.push({ epic: null, issues: noEpicIssues });
     }
 
+    // Check for duplicate epic keys in the built tree epics
+    const epicDupes = checkDuplicateKeys(
+      "buildTree",
+      `treeEpics for project "${project.name}" (id=${project.id})`,
+      treeEpics,
+      (te) => te.epic?.id ?? `no-epic`,
+    );
+    if (epicDupes.length > 0) {
+      debugError("buildTree", `PROJECT "${project.name}" (id=${project.id}) has DUPLICATE EPIC KEYS — this will cause Svelte each_key_duplicate!`, {
+        epicDupes,
+        treeEpics: treeEpics.map(te => ({
+          epicId: te.epic?.id,
+          epicIid: te.epic?.iid,
+          epicGroupId: te.epic?.group_id,
+          epicTitle: te.epic?.title,
+          issueCount: te.issues.length,
+        })),
+        availableEpics: availableEpics.map(e => ({ id: e.id, iid: e.iid, group_id: e.group_id, title: e.title })),
+        projectIssues: projectIssues.map(i => ({ id: i.id, iid: i.iid, epic_iid: i.epic_iid, title: i.title })),
+      });
+    }
+
     return { project, epics: treeEpics };
   }
 
@@ -185,6 +231,10 @@ function buildTree(
       .filter((g) => g.parent_id === group.id)
       .map(buildTreeGroup);
 
+    // Check for duplicate subgroup/project keys
+    checkDuplicateKeys("buildTree", `subgroups of group "${group.name}" (id=${group.id})`, subgroups, (sg) => sg.group.id);
+    checkDuplicateKeys("buildTree", `projects of group "${group.name}" (id=${group.id})`, treeProjects, (tp) => tp.project.id);
+
     return { group, subgroups, projects: treeProjects };
   }
 
@@ -193,7 +243,15 @@ function buildTree(
     (g) => g.parent_id === null || !groupMap.has(g.parent_id),
   );
 
-  return topLevelGroups.map(buildTreeGroup);
+  debugLog("buildTree", `Top-level groups: ${topLevelGroups.length}`, topLevelGroups.map(g => ({ id: g.id, name: g.name })));
+
+  const result = topLevelGroups.map(buildTreeGroup);
+
+  // Final check on top-level tree
+  checkDuplicateKeys("buildTree", "top-level tree groups", result, (tg) => tg.group.id);
+
+  debugLog("buildTree", "Tree built successfully");
+  return result;
 }
 
 export const dataStore = {

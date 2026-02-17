@@ -83,14 +83,22 @@
       }));
 
       // Phase 3: Fetch epics per group (parallel, throttled by concurrency limiter)
+      // Note: /groups/:id/epics returns epics from the group AND its descendants,
+      // so fetching for every group produces duplicates. Deduplicate by epic id.
       phase = "Fetching epics...";
       progress = 0;
       total = uniqueGroups.length;
       const allEpics: GitLabEpic[] = [];
+      const seenEpicIds = new Set<number>();
 
       await Promise.all(uniqueGroups.map(async (group) => {
         const epics = await fetchEpicsForGroup(config, group.id, signal);
-        allEpics.push(...epics);
+        for (const e of epics) {
+          if (!seenEpicIds.has(e.id)) {
+            seenEpicIds.add(e.id);
+            allEpics.push(e);
+          }
+        }
         progress++;
       }));
 

@@ -4,6 +4,7 @@
   import GroupRow from "./GroupRow.svelte";
   import ProjectRow from "./ProjectRow.svelte";
   import { countIssues } from "$lib/utils/tree.js";
+  import { checkDuplicateKeys } from "$lib/utils/debug.js";
 
   interface Props {
     treeGroup: TreeGroup;
@@ -17,6 +18,14 @@
   let groupKey = $derived(`group-${treeGroup.group.id}`);
   let expanded = $derived(expandedKeys.has(groupKey));
   let issueCount = $derived(countIssues(treeGroup));
+
+  // Debug: check for duplicate keys in subgroups and projects
+  $effect(() => {
+    if (expanded) {
+      checkDuplicateKeys("GroupRow", `subgroups of "${treeGroup.group.name}"`, treeGroup.subgroups, (sg) => sg.group.id);
+      checkDuplicateKeys("GroupRow", `projects of "${treeGroup.group.name}"`, treeGroup.projects, (tp) => tp.project.id);
+    }
+  });
 </script>
 
 <div

@@ -2,6 +2,7 @@
   import { slide } from "svelte/transition";
   import type { TreeProject } from "$lib/types/gitlab.js";
   import EpicRow from "./EpicRow.svelte";
+  import { checkDuplicateKeys, debugError } from "$lib/utils/debug.js";
 
   interface Props {
     treeProject: TreeProject;
@@ -17,6 +18,29 @@
   let issueCount = $derived(
     treeProject.epics.reduce((sum, e) => sum + e.issues.length, 0)
   );
+
+  // Debug: check for duplicate epic keys — this is the most likely location for the each_key_duplicate bug
+  $effect(() => {
+    const dupes = checkDuplicateKeys(
+      "ProjectRow",
+      `epics in project "${treeProject.project.name}" (id=${treeProject.project.id})`,
+      treeProject.epics,
+      (te) => te.epic?.id ?? `no-epic-${treeProject.project.id}`,
+    );
+    if (dupes.length > 0) {
+      debugError("ProjectRow", `FOUND THE BUG! Project "${treeProject.project.name}" has duplicate epic keys:`, {
+        dupes,
+        epics: treeProject.epics.map(te => ({
+          epicId: te.epic?.id,
+          epicIid: te.epic?.iid,
+          epicGroupId: te.epic?.group_id,
+          epicTitle: te.epic?.title ?? "(No Epic)",
+          issueCount: te.issues.length,
+          issueIds: te.issues.map(i => i.id),
+        })),
+      });
+    }
+  });
 </script>
 
 <div
