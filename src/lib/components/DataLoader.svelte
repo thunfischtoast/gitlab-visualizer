@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card/index.js";
   import { Progress } from "$lib/components/ui/progress/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
@@ -63,15 +64,14 @@
       // Deduplicate groups by id (top_level_only=false may return nested groups)
       const uniqueGroups = [...new Map(groups.map((g) => [g.id, g])).values()];
 
-      // Phase 2: Fetch projects per group
+      // Phase 2: Fetch projects per group (parallel, throttled by concurrency limiter)
       phase = "Fetching projects...";
       progress = 0;
       total = uniqueGroups.length;
       const allProjects: GitLabProject[] = [];
       const seenProjectIds = new Set<number>();
 
-      for (const group of uniqueGroups) {
-        if (signal.aborted) return;
+      await Promise.all(uniqueGroups.map(async (group) => {
         const projects = await fetchProjectsForGroup(config, group.id, signal);
         for (const p of projects) {
           if (!seenProjectIds.has(p.id)) {
@@ -80,33 +80,31 @@
           }
         }
         progress++;
-      }
+      }));
 
-      // Phase 3: Fetch epics per group
+      // Phase 3: Fetch epics per group (parallel, throttled by concurrency limiter)
       phase = "Fetching epics...";
       progress = 0;
       total = uniqueGroups.length;
       const allEpics: GitLabEpic[] = [];
 
-      for (const group of uniqueGroups) {
-        if (signal.aborted) return;
+      await Promise.all(uniqueGroups.map(async (group) => {
         const epics = await fetchEpicsForGroup(config, group.id, signal);
         allEpics.push(...epics);
         progress++;
-      }
+      }));
 
-      // Phase 4: Fetch issues per project
+      // Phase 4: Fetch issues per project (parallel, throttled by concurrency limiter)
       phase = "Fetching issues...";
       progress = 0;
       total = allProjects.length;
       const allIssues: GitLabIssue[] = [];
 
-      for (const project of allProjects) {
-        if (signal.aborted) return;
+      await Promise.all(allProjects.map(async (project) => {
         const issues = await fetchIssuesForProject(config, project.id, signal);
         allIssues.push(...issues);
         progress++;
-      }
+      }));
 
       onloaded({
         groups: uniqueGroups,
@@ -130,9 +128,9 @@
     loadData();
   }
 
-  // Start loading immediately
+  // Start loading once on mount — untrack to avoid re-firing on reactive changes
   $effect(() => {
-    loadData();
+    untrack(() => loadData());
     return () => abortController?.abort();
   });
 </script>

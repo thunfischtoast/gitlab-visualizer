@@ -7,7 +7,11 @@
 
   type AppView = "connection" | "loading" | "main";
 
-  let view = $state<AppView>(connectionStore.isConnected ? "loading" : "connection");
+  // Check for OAuth callback before deciding initial view
+  const hasOAuthCode = new URLSearchParams(window.location.search).has("code");
+  let view = $state<AppView>(
+    connectionStore.isConnected ? "loading" : hasOAuthCode ? "loading" : "connection"
+  );
   let oauthError = $state("");
 
   // Loaded data (will be used in Phase 3+)
@@ -60,6 +64,7 @@
   handleOAuthCallback();
 
   function handleConnected() {
+    oauthError = "";
     view = "loading";
   }
 

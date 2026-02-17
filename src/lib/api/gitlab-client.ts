@@ -73,7 +73,7 @@ async function fetchWithRetry(
       throw new GitLabApiError(401, "Invalid or expired token");
     }
 
-    if (!response.ok && response.status !== 403) {
+    if (!response.ok) {
       throw new GitLabApiError(
         response.status,
         `GitLab API error: ${response.status} ${response.statusText}`,

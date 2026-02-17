@@ -30,7 +30,7 @@
         token: patToken,
         authMethod: "pat" as const,
       };
-      const username = await validateConnection(config);
+      await validateConnection(config);
       connectionStore.setConnection({
         gitlabUrl: patUrl,
         authMethod: "pat",
@@ -73,17 +73,6 @@
     }
   }
 
-  function handlePatKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter" && patUrl && patToken && !loading) {
-      connectWithPAT();
-    }
-  }
-
-  function handleOAuthKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter" && oauthUrl && oauthClientId && !loading) {
-      loginWithOAuth();
-    }
-  }
 </script>
 
 <div class="flex min-h-screen items-center justify-center p-4">
@@ -100,11 +89,9 @@
         </TabsList>
 
         <TabsContent value="pat">
-          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <form
             class="mt-4 space-y-4"
             onsubmit={(e) => { e.preventDefault(); connectWithPAT(); }}
-            onkeydown={handlePatKeydown}
           >
             <div class="space-y-2">
               <label for="pat-url" class="text-sm font-medium">GitLab URL</label>
@@ -134,11 +121,9 @@
         </TabsContent>
 
         <TabsContent value="oauth">
-          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
           <form
             class="mt-4 space-y-4"
             onsubmit={(e) => { e.preventDefault(); loginWithOAuth(); }}
-            onkeydown={handleOAuthKeydown}
           >
             <div class="space-y-2">
               <label for="oauth-url" class="text-sm font-medium">GitLab URL</label>
