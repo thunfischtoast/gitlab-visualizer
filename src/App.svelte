@@ -8,6 +8,7 @@
   import { dataStore } from "$lib/stores/data.svelte.js";
   import { filterStore } from "$lib/stores/filters.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
+  import ThemeToggle from "$lib/components/ThemeToggle.svelte";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
   type AppView = "connection" | "loading" | "main";
@@ -103,6 +104,9 @@
 <main class="min-h-screen bg-background text-foreground">
   <svelte:boundary onerror={(e) => console.error("App error:", e)}>
     {#if view === "connection"}
+      <div class="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <ConnectionSetup onconnected={handleConnected} />
       {#if oauthError}
         <div
@@ -118,6 +122,9 @@
       {/if}
 
     {:else if view === "loading"}
+      <div class="fixed top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <DataLoader onloaded={handleLoaded} oncancel={handleLoadCancel} />
 
     {:else if view === "main"}
@@ -135,6 +142,7 @@
               </p>
             </div>
             <div class="flex gap-2">
+              <ThemeToggle />
               <button
                 class="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onclick={handleRefresh}
