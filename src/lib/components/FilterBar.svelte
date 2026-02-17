@@ -37,7 +37,7 @@
     <option value="closed">Closed</option>
   </select>
 
-  {#each filterStore.scopedLabelKeys as key}
+  {#each filterStore.activeScopedKeys as key}
     <MultiSelect
       label={key}
       options={(filterStore.scopedLabelValues[key] ?? []).map((v) => ({

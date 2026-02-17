@@ -18,7 +18,13 @@
   let epic = $derived(treeEpic.epic);
 
   let nonScopedLabels = $derived(
-    epic ? epic.labels.filter((l: string) => !l.includes("::")) : [],
+    epic
+      ? epic.labels.filter((l: string) => {
+          const idx = l.indexOf("::");
+          if (idx === -1) return true;
+          return !filterStore.activeScopedKeys.includes(l.substring(0, idx));
+        })
+      : [],
   );
 
   let scopedValues = $derived.by(() => {
@@ -85,7 +91,7 @@
   </div>
 
   <!-- Scoped label columns -->
-  {#each filterStore.scopedLabelKeys as key}
+  {#each filterStore.activeScopedKeys as key}
     <div class="hidden w-28 flex-shrink-0 flex-wrap gap-1 px-2 lg:flex">
       {#each scopedValues[key] ?? [] as value}
         <LabelBadge label={value} />

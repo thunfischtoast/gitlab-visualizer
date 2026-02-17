@@ -49,7 +49,7 @@
   <div class="hidden w-48 flex-shrink-0 px-2 lg:block"></div>
 
   <!-- Scoped label columns (spacers) -->
-  {#each filterStore.scopedLabelKeys as key}
+  {#each filterStore.activeScopedKeys as key}
     <div class="hidden w-28 flex-shrink-0 px-2 lg:block"></div>
   {/each}
 

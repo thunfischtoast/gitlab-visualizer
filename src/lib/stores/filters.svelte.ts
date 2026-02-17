@@ -15,6 +15,11 @@ function parseScopedLabel(label: string): { key: string; value: string } | null 
   return { key: label.substring(0, idx), value: label.substring(idx + 2) };
 }
 
+// --- Scoped column state ---
+
+const DEFAULT_SCOPED_KEYS = ["Partner", "Priority", "State", "Type"];
+let enabledScopedKeys = $state<string[]>(DEFAULT_SCOPED_KEYS);
+
 // --- Filter state ---
 
 let searchText = $state("");
@@ -35,16 +40,21 @@ let sortActive = $state(false);
 
 // --- Derived: available filter options from raw data ---
 
+function isActiveScopedLabel(label: string): boolean {
+  const parsed = parseScopedLabel(label);
+  return parsed !== null && activeScopedKeys.includes(parsed.key);
+}
+
 let allLabels = $derived.by(() => {
   const labels = new Set<string>();
   for (const issue of dataStore.issues) {
     for (const label of issue.labels) {
-      if (!label.includes("::")) labels.add(label);
+      if (!isActiveScopedLabel(label)) labels.add(label);
     }
   }
   for (const epic of dataStore.epics) {
     for (const label of epic.labels) {
-      if (!label.includes("::")) labels.add(label);
+      if (!isActiveScopedLabel(label)) labels.add(label);
     }
   }
   return [...labels].sort();
@@ -66,6 +76,11 @@ let scopedLabelKeys = $derived.by(() => {
   }
   return [...keys].sort();
 });
+
+// Only keys the user has enabled AND that exist in the data
+let activeScopedKeys = $derived(
+  enabledScopedKeys.filter((k) => scopedLabelKeys.includes(k)),
+);
 
 let scopedLabelValues = $derived.by(() => {
   const map: Record<string, Set<string>> = {};
@@ -265,6 +280,15 @@ export const filterStore = {
 
   get scopedLabelKeys() {
     return scopedLabelKeys;
+  },
+  get activeScopedKeys() {
+    return activeScopedKeys;
+  },
+  get enabledScopedKeys() {
+    return enabledScopedKeys;
+  },
+  set enabledScopedKeys(v: string[]) {
+    enabledScopedKeys = v;
   },
   get scopedLabelValues() {
     return scopedLabelValues;
