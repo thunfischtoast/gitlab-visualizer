@@ -1,33 +1,43 @@
-import { loadFromStorage, saveToStorage, removeFromStorage } from "$lib/utils/storage.js";
+import { loadFromStorage, saveToStorage, removeFromStorage, loadFromSession, saveToSession, removeFromSession } from "$lib/utils/storage.js";
 import type { AuthMethod } from "$lib/api/gitlab-client.js";
 
-const STORAGE_KEY = "gitlab-connection";
+const SETTINGS_KEY = "gitlab-connection";
+const TOKEN_KEY = "gitlab-tokens";
 
-interface ConnectionData {
+interface ConnectionSettings {
   gitlabUrl: string;
   authMethod: AuthMethod;
-  token: string;
-  refreshToken: string;
   clientId: string;
 }
 
-const stored = loadFromStorage<ConnectionData | null>(STORAGE_KEY, null);
+interface TokenData {
+  token: string;
+  refreshToken: string;
+}
 
-let gitlabUrl = $state(stored?.gitlabUrl ?? "");
-let authMethod = $state<AuthMethod>(stored?.authMethod ?? "pat");
-let token = $state(stored?.token ?? "");
-let refreshToken = $state(stored?.refreshToken ?? "");
-let clientId = $state(stored?.clientId ?? "");
+const storedSettings = loadFromStorage<ConnectionSettings | null>(SETTINGS_KEY, null);
+const storedTokens = loadFromSession<TokenData | null>(TOKEN_KEY, null);
+
+let gitlabUrl = $state(storedSettings?.gitlabUrl ?? "");
+let authMethod = $state<AuthMethod>(storedSettings?.authMethod ?? "pat");
+let token = $state(storedTokens?.token ?? "");
+let refreshToken = $state(storedTokens?.refreshToken ?? "");
+let clientId = $state(storedSettings?.clientId ?? "");
 
 const isConnected = $derived(!!gitlabUrl && !!token);
 
-function persist() {
-  saveToStorage(STORAGE_KEY, {
+function persistSettings() {
+  saveToStorage(SETTINGS_KEY, {
     gitlabUrl,
     authMethod,
+    clientId,
+  });
+}
+
+function persistTokens() {
+  saveToSession(TOKEN_KEY, {
     token,
     refreshToken,
-    clientId,
   });
 }
 
@@ -43,13 +53,14 @@ function setConnection(data: {
   token = data.token;
   refreshToken = data.refreshToken ?? "";
   clientId = data.clientId ?? "";
-  persist();
+  persistSettings();
+  persistTokens();
 }
 
 function updateTokens(newToken: string, newRefreshToken: string) {
   token = newToken;
   refreshToken = newRefreshToken;
-  persist();
+  persistTokens();
 }
 
 function disconnect() {
@@ -58,7 +69,8 @@ function disconnect() {
   token = "";
   refreshToken = "";
   clientId = "";
-  removeFromStorage(STORAGE_KEY);
+  removeFromStorage(SETTINGS_KEY);
+  removeFromSession(TOKEN_KEY);
 }
 
 export const connectionStore = {

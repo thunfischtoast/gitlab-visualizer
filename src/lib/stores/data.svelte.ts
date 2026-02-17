@@ -1,4 +1,4 @@
-import { loadFromStorage, saveToStorage, removeFromStorage } from "$lib/utils/storage.js";
+import { loadFromStorage, saveToStorage, removeFromStorage, validateShape } from "$lib/utils/storage.js";
 import { debugLog, debugWarn, debugError, checkDuplicateKeys } from "$lib/utils/debug.js";
 import type {
   GitLabGroup,
@@ -49,8 +49,21 @@ function clear() {
 
 /** Try loading from localStorage. Returns true if fresh cache was found. */
 function loadFromCache(): boolean {
-  const cached = loadFromStorage<CachedData | null>(STORAGE_KEY, null);
+  const cached = loadFromStorage<unknown>(STORAGE_KEY, null);
   if (!cached) return false;
+
+  // Validate shape before trusting localStorage data
+  if (!validateShape<CachedData>(cached, {
+    groups: "array",
+    projects: "array",
+    epics: "array",
+    issues: "array",
+    timestamp: "number",
+  })) {
+    debugWarn("data", "Invalid cache data shape, discarding");
+    removeFromStorage(STORAGE_KEY);
+    return false;
+  }
 
   const age = Date.now() - cached.timestamp;
   if (age > CACHE_MAX_AGE_MS) {
@@ -72,7 +85,7 @@ function persist() {
     projects,
     epics,
     issues,
-    timestamp: cacheTimestamp!,
+    timestamp: cacheTimestamp ?? Date.now(),
   } satisfies CachedData);
 }
 

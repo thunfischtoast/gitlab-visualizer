@@ -4,6 +4,8 @@ export interface ClientConfig {
   baseUrl: string;
   token: string;
   authMethod: AuthMethod;
+  /** Optional callback to refresh an expired token. Returns the new token, or null if refresh failed. */
+  refreshAuth?: () => Promise<string | null>;
 }
 
 export class GitLabApiError extends Error {
@@ -69,10 +71,6 @@ async function fetchWithRetry(
       continue;
     }
 
-    if (response.status === 401) {
-      throw new GitLabApiError(401, "Invalid or expired token");
-    }
-
     if (!response.ok) {
       throw new GitLabApiError(
         response.status,
@@ -86,6 +84,23 @@ async function fetchWithRetry(
   throw new GitLabApiError(429, "Rate limited — too many retries");
 }
 
+/**
+ * Try refreshing the auth token on 401. Returns updated headers if successful.
+ * Throws the original error if refresh is not available or fails.
+ */
+async function handleUnauthorized(
+  config: ClientConfig,
+  originalError: GitLabApiError,
+): Promise<Record<string, string>> {
+  if (!config.refreshAuth) throw originalError;
+
+  const newToken = await config.refreshAuth();
+  if (!newToken) throw originalError;
+
+  config.token = newToken;
+  return buildHeaders(config);
+}
+
 /** Fetch a single page from the GitLab API. */
 export async function apiFetch<T>(
   config: ClientConfig,
@@ -93,12 +108,23 @@ export async function apiFetch<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const url = `${config.baseUrl}/api/v4${path}`;
-  const headers = buildHeaders(config);
 
-  return limiter(async () => {
-    const response = await fetchWithRetry(url, headers, signal);
-    return response.json() as Promise<T>;
-  });
+  try {
+    return await limiter(async () => {
+      const headers = buildHeaders(config);
+      const response = await fetchWithRetry(url, headers, signal);
+      return response.json() as Promise<T>;
+    });
+  } catch (err) {
+    if (err instanceof GitLabApiError && err.status === 401) {
+      const newHeaders = await handleUnauthorized(config, err);
+      return limiter(async () => {
+        const response = await fetchWithRetry(url, newHeaders, signal);
+        return response.json() as Promise<T>;
+      });
+    }
+    throw err;
+  }
 }
 
 /** Fetch all pages of a paginated GitLab API endpoint. */
@@ -108,7 +134,6 @@ export async function apiFetchAllPages<T>(
   signal?: AbortSignal,
   onPage?: (page: number) => void,
 ): Promise<T[]> {
-  const headers = buildHeaders(config);
   const separator = path.includes("?") ? "&" : "?";
   let results: T[] = [];
   let page = 1;
@@ -116,18 +141,40 @@ export async function apiFetchAllPages<T>(
   while (true) {
     const url = `${config.baseUrl}/api/v4${path}${separator}per_page=100&page=${page}`;
 
-    const response = await limiter(async () => {
-      return fetchWithRetry(url, headers, signal);
-    });
+    try {
+      const response = await limiter(async () => {
+        const headers = buildHeaders(config);
+        return fetchWithRetry(url, headers, signal);
+      });
 
-    const data = (await response.json()) as T[];
-    results = results.concat(data);
-    onPage?.(page);
+      const data = (await response.json()) as T[];
+      results = results.concat(data);
+      onPage?.(page);
 
-    const nextPage = response.headers.get("x-next-page");
-    if (!nextPage) break;
-    page = parseInt(nextPage, 10);
-    if (isNaN(page)) break;
+      const nextPage = response.headers.get("x-next-page");
+      if (!nextPage) break;
+      page = parseInt(nextPage, 10);
+      if (isNaN(page)) break;
+    } catch (err) {
+      if (err instanceof GitLabApiError && err.status === 401) {
+        const newHeaders = await handleUnauthorized(config, err);
+        // Retry the current page with refreshed token
+        const response = await limiter(async () => {
+          return fetchWithRetry(url, newHeaders, signal);
+        });
+
+        const data = (await response.json()) as T[];
+        results = results.concat(data);
+        onPage?.(page);
+
+        const nextPage = response.headers.get("x-next-page");
+        if (!nextPage) break;
+        page = parseInt(nextPage, 10);
+        if (isNaN(page)) break;
+      } else {
+        throw err;
+      }
+    }
   }
 
   return results;
