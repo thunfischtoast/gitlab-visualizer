@@ -1,6 +1,7 @@
 <script lang="ts">
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
+  import FilterBar from "$lib/components/FilterBar.svelte";
   import HierarchicalTable from "$lib/components/HierarchicalTable.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
   import { dataStore } from "$lib/stores/data.svelte.js";
@@ -135,6 +136,9 @@
           </span>
         {/if}
       </p>
+      <div class="mb-3">
+        <FilterBar />
+      </div>
       <HierarchicalTable />
     </div>
   {/if}
