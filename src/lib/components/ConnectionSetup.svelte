@@ -21,12 +21,26 @@
   let error = $state("");
   let loading = $state(false);
 
+  function validateUrl(url: string): string {
+    const trimmed = url.replace(/\/+$/, "");
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        throw new Error("URL must use http or https");
+      }
+      return trimmed;
+    } catch {
+      throw new Error("Invalid GitLab URL — must be a valid URL (e.g. https://gitlab.example.com)");
+    }
+  }
+
   async function connectWithPAT() {
     error = "";
     loading = true;
     try {
+      const baseUrl = validateUrl(patUrl);
       const config = {
-        baseUrl: patUrl.replace(/\/+$/, ""),
+        baseUrl,
         token: patToken,
         authMethod: "pat" as const,
       };
@@ -48,6 +62,7 @@
     error = "";
     loading = true;
     try {
+      const baseUrl = validateUrl(oauthUrl);
       const { codeVerifier, codeChallenge } = await generatePKCE();
       storeCodeVerifier(codeVerifier);
 
@@ -61,7 +76,7 @@
 
       const redirectUri = getRedirectUri();
       const authUrl = buildAuthUrl(
-        oauthUrl.replace(/\/+$/, ""),
+        baseUrl,
         oauthClientId,
         redirectUri,
         codeChallenge,

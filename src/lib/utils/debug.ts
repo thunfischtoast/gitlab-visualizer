@@ -4,7 +4,7 @@
  * duplicate key issues and tree-building problems.
  */
 
-export const DEBUG_ENABLED = true;
+export const DEBUG_ENABLED = import.meta.env.DEV;
 
 const PREFIX = "[DEBUG]";
 

@@ -5,6 +5,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
   import type { ClientConfig } from "$lib/api/gitlab-client.js";
+  import { refreshToken as refreshOAuthToken } from "$lib/api/oauth.js";
   import {
     fetchAllGroups,
     fetchProjectsForGroup,
@@ -77,11 +78,30 @@
   }
 
   function getConfig(): ClientConfig {
-    return {
+    const config: ClientConfig = {
       baseUrl: connectionStore.gitlabUrl,
       token: connectionStore.token,
       authMethod: connectionStore.authMethod,
     };
+
+    // Wire up token refresh for OAuth connections
+    if (config.authMethod === "oauth" && connectionStore.refreshToken) {
+      config.refreshAuth = async () => {
+        try {
+          const response = await refreshOAuthToken(
+            connectionStore.gitlabUrl,
+            connectionStore.clientId,
+            connectionStore.refreshToken,
+          );
+          connectionStore.updateTokens(response.access_token, response.refresh_token);
+          return response.access_token;
+        } catch {
+          return null;
+        }
+      };
+    }
+
+    return config;
   }
 
   async function loadData() {
