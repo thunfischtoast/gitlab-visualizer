@@ -5,6 +5,7 @@
   import HierarchicalTable from "$lib/components/HierarchicalTable.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
   import { dataStore } from "$lib/stores/data.svelte.js";
+  import { filterStore } from "$lib/stores/filters.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
@@ -87,6 +88,7 @@
   }
 
   function handleRefresh() {
+    filterStore.clearFilters();
     view = "loading";
   }
 

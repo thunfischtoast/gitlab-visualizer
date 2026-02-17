@@ -27,7 +27,7 @@
   }
 
   function sortIndicator(field: SortField): string {
-    if (filterStore.sortField !== field) return "";
+    if (!filterStore.sortActive || filterStore.sortField !== field) return "";
     return filterStore.sortDirection === "asc" ? " \u25B4" : " \u25BE";
   }
 </script>
@@ -71,7 +71,7 @@
       class="w-16 flex-shrink-0 text-center hover:text-foreground"
       onclick={() => filterStore.toggleSort("iid")}
     >
-      #{sortIndicator("iid")}
+      Count{sortIndicator("iid")}
     </button>
   </div>
 

@@ -2,17 +2,6 @@
   import { filterStore } from "$lib/stores/filters.svelte.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import MultiSelect from "./MultiSelect.svelte";
-
-  let labelOptions = $derived(
-    filterStore.allLabels.map((l) => ({ value: l, label: l })),
-  );
-
-  let assigneeOptions = $derived(
-    filterStore.allAssignees.map((a) => ({
-      value: a.username,
-      label: a.name || a.username,
-    })),
-  );
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
@@ -28,7 +17,7 @@
 
   <MultiSelect
     label="Labels"
-    options={labelOptions}
+    options={filterStore.allLabels.map((l) => ({ value: l, label: l }))}
     selected={filterStore.selectedLabels}
     onchange={(v) => {
       filterStore.selectedLabels = v;
@@ -50,7 +39,10 @@
 
   <MultiSelect
     label="Assignees"
-    options={assigneeOptions}
+    options={filterStore.allAssignees.map((a) => ({
+      value: a.username,
+      label: a.name || a.username,
+    }))}
     selected={filterStore.selectedAssignees}
     onchange={(v) => {
       filterStore.selectedAssignees = v;

@@ -17,10 +17,12 @@ let selectedAssignees = $state<string[]>([]);
 // --- Sort state ---
 
 export type SortField = "iid" | "title" | "status";
-export type SortDirection = "asc" | "desc";
 
 let sortField = $state<SortField>("iid");
-let sortDirection = $state<SortDirection>("asc");
+let sortDirection = $state<"asc" | "desc">("asc");
+
+// Whether the user has explicitly clicked a sort header
+let sortActive = $state(false);
 
 // --- Derived: available filter options from raw data ---
 
@@ -170,8 +172,12 @@ export const filterStore = {
   get sortDirection() {
     return sortDirection;
   },
+  get sortActive() {
+    return sortActive;
+  },
 
   toggleSort(field: SortField) {
+    sortActive = true;
     if (sortField === field) {
       sortDirection = sortDirection === "asc" ? "desc" : "asc";
     } else {

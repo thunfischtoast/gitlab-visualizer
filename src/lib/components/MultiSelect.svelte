@@ -10,7 +10,7 @@
 
   let open = $state(false);
   let search = $state("");
-  let containerEl: HTMLDivElement | undefined = $state();
+  let containerEl: HTMLDivElement | undefined;
 
   let filteredOptions = $derived(
     search
@@ -19,6 +19,11 @@
         )
       : options,
   );
+
+  function close() {
+    open = false;
+    search = "";
+  }
 
   function toggle(value: string) {
     if (selected.includes(value)) {
@@ -30,19 +35,25 @@
 
   function handleWindowClick(e: MouseEvent) {
     if (open && containerEl && !containerEl.contains(e.target as Node)) {
-      open = false;
+      close();
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (open && e.key === "Escape") {
+      close();
     }
   }
 </script>
 
-<svelte:window onclick={handleWindowClick} />
+<svelte:window onclick={handleWindowClick} onkeydown={handleKeydown} />
 
 <div class="relative" bind:this={containerEl}>
   <button
     class="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
     onclick={() => {
-      open = !open;
-      if (!open) search = "";
+      if (open) close();
+      else open = true;
     }}
   >
     {label}
