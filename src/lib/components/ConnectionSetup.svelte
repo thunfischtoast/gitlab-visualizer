@@ -156,6 +156,10 @@
       {#if error}
         <p class="mt-4 text-sm text-destructive">{error}</p>
       {/if}
+
+      <p class="mt-6 text-center text-xs text-muted-foreground">
+        No backend server &mdash; your token and all data stay in your browser's local storage and are never sent to a third party.
+      </p>
     </CardContent>
   </Card>
 </div>
