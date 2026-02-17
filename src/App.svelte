@@ -1,6 +1,7 @@
 <script lang="ts">
   import ConnectionSetup from "$lib/components/ConnectionSetup.svelte";
   import DataLoader from "$lib/components/DataLoader.svelte";
+  import HierarchicalTable from "$lib/components/HierarchicalTable.svelte";
   import { connectionStore } from "$lib/stores/connection.svelte.js";
   import { dataStore } from "$lib/stores/data.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
@@ -126,7 +127,7 @@
           </button>
         </div>
       </div>
-      <p class="text-muted-foreground">
+      <p class="mb-3 text-muted-foreground">
         Loaded {dataStore.groups.length} groups, {dataStore.projects.length} projects, {dataStore.epics.length} epics, {dataStore.issues.length} issues.
         {#if dataStore.cacheTimestamp}
           <span class="text-xs">
@@ -134,7 +135,7 @@
           </span>
         {/if}
       </p>
-      <p class="mt-2 text-sm text-muted-foreground">Hierarchical table coming in Phase 4.</p>
+      <HierarchicalTable />
     </div>
   {/if}
 </main>
