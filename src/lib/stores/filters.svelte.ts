@@ -80,6 +80,10 @@ let sortDirection = $state<"asc" | "desc">("asc");
 // Whether the user has explicitly clicked a sort header
 let sortActive = $state(false);
 
+// --- Expanded rows (shared so the HTML export can mirror the current view) ---
+
+let expandedKeys = $state(new Set<string>());
+
 // --- Derived: available filter options from raw data ---
 
 function isActiveScopedLabel(label: string): boolean {
@@ -317,6 +321,9 @@ export const filterStore = {
       sortDirection = "asc";
     }
   },
+
+  get expandedKeys() { return expandedKeys; },
+  set expandedKeys(v: Set<string>) { expandedKeys = v; },
 
   get allLabels() { return allLabels; },
   get allAssignees() { return allAssignees; },

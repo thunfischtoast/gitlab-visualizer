@@ -5,18 +5,16 @@
   import GroupRow from "./GroupRow.svelte";
   import MultiSelect from "./MultiSelect.svelte";
 
-  let expandedKeys = $state(new Set<string>());
-
   // Debug: check for duplicate keys whenever filteredTree changes
   $effect(() => {
     checkDuplicateKeys("HierarchicalTable", "filteredTree group keys", filterStore.filteredTree, (tg) => tg.group.id);
   });
 
   function toggle(key: string) {
-    const next = new Set(expandedKeys);
+    const next = new Set(filterStore.expandedKeys);
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    expandedKeys = next;
+    filterStore.expandedKeys = next;
   }
 
   function expandAll() {
@@ -26,11 +24,11 @@
         allKeys.add(key);
       }
     }
-    expandedKeys = allKeys;
+    filterStore.expandedKeys = allKeys;
   }
 
   function collapseAll() {
-    expandedKeys = new Set();
+    filterStore.expandedKeys = new Set();
   }
 
   function sortIndicator(field: SortField): string {
@@ -102,7 +100,7 @@
 
   <!-- Rows -->
   {#each filterStore.filteredTree as treeGroup (treeGroup.group.id)}
-    <GroupRow {treeGroup} depth={0} {expandedKeys} ontoggle={toggle} />
+    <GroupRow {treeGroup} depth={0} expandedKeys={filterStore.expandedKeys} ontoggle={toggle} />
   {/each}
 
   {#if filterStore.filteredTree.length === 0}

@@ -13,6 +13,7 @@ All data stays in your browser — nothing is sent to third parties.
 - **Sorting**: Click column headers to sort issues by title, status, or IID
 - **Labels**: Displayed as colored badges
 - **Clickable links**: Titles link back to GitLab originals
+- **HTML export**: "Export as HTML" produces a self-contained static snapshot of the current table (filters, columns, expanded rows) with inline styles and links, ready for a Confluence HTML macro
 - **Local caching**: Fetched data is cached in LocalStorage (1-hour TTL) to avoid re-fetching
 - **Responsive**: Labels and assignee columns hide on smaller screens
 - **Keyboard accessible**: Enter/Space to expand/collapse, focus-visible rings on all interactive elements

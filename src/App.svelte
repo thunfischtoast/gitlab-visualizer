@@ -11,6 +11,7 @@
   import { filterStore } from "$lib/stores/filters.svelte.js";
   import { exchangeCode, getRedirectUri, retrieveCodeVerifier } from "$lib/api/oauth.js";
   import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+  import ExportDialog from "$lib/components/ExportDialog.svelte";
   import type { GitLabGroup, GitLabProject, GitLabEpic, GitLabIssue } from "$lib/types/gitlab.js";
 
   type AppView = "connection" | "group-picker" | "loading" | "main";
@@ -164,6 +165,7 @@
             </div>
             <div class="flex gap-2">
               <ThemeToggle />
+              <ExportDialog />
               <button
                 class="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onclick={handleRefresh}

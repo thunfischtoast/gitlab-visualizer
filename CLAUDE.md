@@ -56,6 +56,7 @@ src/
 - **Group Picker**: After connecting, users select which top-level groups to visualize. BFS loads all descendant subgroups. Selection persisted in localStorage.
 - **Scoped Labels**: Labels with `::` separator (e.g. `Priority::High`) get dedicated filter columns. Default scoped keys: Partner, Priority, State, Type. Users can toggle columns via the "Columns" multi-select.
 - **Dark Mode**: Toggle in header on all views. Uses system preference as default, persists choice to localStorage.
+- **HTML Export**: Header button opens a dialog with the current table as static HTML (`utils/exportHtml.ts`). Inline styles only, nested `<details>` mirror `filterStore.expandedKeys`, assignees shown as a count (avatars need GitLab auth). Built from `filterStore`, so keep it in sync with the row components when columns change.
 - **Token Refresh**: OAuth connections automatically retry on 401 using the refresh token. PAT connections surface the error directly.
 
 ## UI Patterns
