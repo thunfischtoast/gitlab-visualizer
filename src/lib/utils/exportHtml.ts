@@ -9,19 +9,26 @@ const FG = "#18181b";
 const MUTED = "#71717a";
 const BORDER = "#e4e4e7";
 const INDENT_PX = 24;
+const MARKER_PX = 20;
+const NAME_MIN_PX = 320;
+const LABELS_PX = 192;
+const SCOPED_PX = 112;
+const STATUS_PX = 80;
+const ASSIGNEE_PX = 80;
+const COUNT_PX = 64;
 
 const NAME_COL = "flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;";
-const LABELS_COL = "flex:0 0 192px;padding:0 8px;display:flex;flex-wrap:wrap;gap:4px;";
-const SCOPED_COL = "flex:0 0 112px;padding:0 8px;display:flex;flex-wrap:wrap;gap:4px;";
-const STATUS_COL = "flex:0 0 80px;text-align:center;font-size:12px;";
-const ASSIGNEE_COL = "flex:0 0 80px;text-align:center;font-size:12px;color:" + MUTED + ";";
-const COUNT_COL = "flex:0 0 64px;text-align:center;font-size:12px;color:" + MUTED + ";";
+const LABELS_COL = `flex:0 0 ${LABELS_PX}px;box-sizing:border-box;padding:0 8px;display:flex;flex-wrap:wrap;gap:4px;`;
+const SCOPED_COL = `flex:0 0 ${SCOPED_PX}px;box-sizing:border-box;padding:0 8px;display:flex;flex-wrap:wrap;gap:4px;`;
+const STATUS_COL = `flex:0 0 ${STATUS_PX}px;text-align:center;font-size:12px;`;
+const ASSIGNEE_COL = `flex:0 0 ${ASSIGNEE_PX}px;text-align:center;font-size:12px;color:${MUTED};`;
+const COUNT_COL = `flex:0 0 ${COUNT_PX}px;text-align:center;font-size:12px;color:${MUTED};`;
 const ROW_BOX = `border-bottom:1px solid ${BORDER};padding-top:6px;padding-bottom:6px;font-size:14px;`;
 // Every row is a list item with a disclosure marker so columns line up; non-expandable
 // rows get a transparent marker of the same width.
 const MARKER_LINE = "display:list-item;list-style-position:inside;";
 const HIDDEN_MARKER = "list-style-type:disclosure-closed;color:transparent;";
-const CELLS = "display:inline-flex;align-items:center;width:calc(100% - 20px);vertical-align:middle;";
+const CELLS = `display:inline-flex;align-items:center;width:calc(100% - ${MARKER_PX}px);vertical-align:middle;`;
 const LINK = `color:${FG};text-decoration:none;`;
 
 function esc(s: string): string {
@@ -144,6 +151,13 @@ function groupRow(tg: TreeGroup, depth: number, scopedKeys: string[]): string {
   return collapsible(`group-${tg.group.id}`, depth, "font-weight:600;", containerCells(tg.group.name, countIssues(tg), scopedKeys), children);
 }
 
+/** Depth of the deepest issue row below a group at the given depth. */
+function maxIssueDepth(tg: TreeGroup, depth: number): number {
+  let max = tg.projects.length > 0 ? depth + 3 : depth;
+  for (const sg of tg.subgroups) max = Math.max(max, maxIssueDepth(sg, depth + 1));
+  return max;
+}
+
 /**
  * Render the table as currently shown (filters, sort, scoped columns, expanded rows)
  * into a self-contained static HTML snippet with inline styles and no scripts.
@@ -162,5 +176,14 @@ export function buildExportHtml(): string {
     `<div style="${COUNT_COL}">Count</div>` +
     `</div></div>`;
   const rows = filterStore.filteredTree.map((tg) => groupRow(tg, 0, scopedKeys)).join("");
-  return `<div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:${FG};background-color:#ffffff;line-height:1.4;">${header}${rows}</div>`;
+  // Fixed columns can't shrink, so narrow hosts (e.g. a Confluence page) would squeeze the
+  // name column to nothing. Reserve room for the deepest indentation and scroll instead.
+  const depth = Math.max(0, ...filterStore.filteredTree.map((tg) => maxIssueDepth(tg, 0)));
+  const minWidth =
+    depth * INDENT_PX + MARKER_PX + NAME_MIN_PX + LABELS_PX + scopedKeys.length * SCOPED_PX + STATUS_PX + ASSIGNEE_PX + COUNT_PX;
+  return (
+    `<div style="overflow-x:auto;">` +
+    `<div style="min-width:${minWidth}px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:${FG};background-color:#ffffff;line-height:1.4;">${header}${rows}</div>` +
+    `</div>`
+  );
 }
